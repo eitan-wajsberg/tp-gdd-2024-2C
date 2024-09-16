@@ -1,0 +1,221 @@
+@startuml diagrama-entidad-relacion-inicial
+
+entity "publicacion" {
+  * publicacion_codigo: DECIMAL(18,0) <<PK>>
+  --
+    publicacion_descripcion: NVARCHAR(50)
+    publicacion_fecha_inicio: DATE
+    publicacion_fecha_fin: DATE
+    publicacion_stock: DECIMAL(18,0)
+    publicacion_precio: DECIMAL(18, 2)
+    publicacion_costo: DECIMAL(18, 2)
+    publicacion_porc_venta: DECIMAL(18, 2)
+    * publicacion_producto_codigo: NVARCHAR(50) <<FK>>
+    * publicacion_vendedor_codigo: INT <<FK>>
+    * publicacion_almacen_codigo: INT <<FK>>
+}
+
+entity "producto" {
+  * producto_codigo: NVARCHAR(50) <<PK>>
+  --
+    producto_descripcion: NVARCHAR(60)
+    producto_marca: NVARCHAR(50)
+    producto_precio: DECIMAL(18, 2)
+    producto_mod_codigo: DECIMAL(18, 0) <<FK>>
+    producto_subRubro_codigo: NVARCHAR(50) <<FK>>
+}
+
+entity "modelo"{
+  * modelo_codigo: DECIMAL(18, 0) <<PK>>
+  --
+    modelo_descripcion: NVARCHAR(50)
+}
+
+entity "subrubro" {
+  * subrubro_codigo: NVARCHAR(50) <<PK>>
+  --
+    subrubro_descripcion: NVARCHAR(50)
+    * subrubro_rubro_codigo: INT <<FK>>
+}
+
+entity "rubro" {
+  * rubro_codigo: INT <<PK>>
+  --
+    rubro_descripcion: NVARCHAR(50)
+}
+
+entity "vendedor" {
+  * vendedor_codigo: INT <<PK>>
+  --
+    vendedor_razon_social: NVARCHAR(500)
+    vendedor_cuit: NVARCHAR(500)
+    * vendedor_usuario_codigo: INT <<FK>>
+    vendedor_domicilio: INT <<FK>>  
+}
+
+entity "almacen" {
+  * almacen_codigo: INT <<PK>>
+  --
+    almacen_docimilio: INT <<FK>>
+}
+
+entity "venta" {
+  * venta_codigo: INT <<PK>>
+  --
+    venta_fecha: DATETIME
+    venta_total: DECIMAL(10, 2)
+    * venta_cliente_codigo: INT <<FK>>
+}
+
+entity "detalle_venta" {
+  * detalleVenta_codigo: INT <<PK>>
+  --
+    detalleVenta_precio: DECIMAL(18, 2)
+    detalleVenta_cantidad: DECIMAL(18, 0)
+    detalleVenta_subtotal: DECIMAL(18, 2)
+    * detalleVenta_publicacion_codigo: INT <<FK>>
+    * detalleVenta_venta_nro: INT <<FK>>
+}
+
+entity "cliente" {
+  * cliente_codigo: INT <<PK>>
+  --
+    cliente_nombre: NVARCHAR(50)
+    cliente_apellido: NVARCHAR(50)
+    cliente_fecha_nacimiento: DATE
+    cliente_dni: DECIMAL(18, 0)
+    * cliente_usuario_codigo: INT <<FK>> 
+}
+
+entity "pago" {
+  * pago_nro: INT <<PK>>
+  --
+    pago_fecha: DATE
+    pago_importe: DECIMAL(18, 2)
+    pago_nro_tarjeta: NVARCHAR(50)
+    pago_fecha_vencimiento_tarjeta: DATE
+    pago_cant_cuotas: DECIMAL(18, 0)
+    pago_medio_pago: NVARCHAR(50)
+    pago_tipo_medio_pago: NVARCHAR(50)
+    * pago_venta_nro: INT <<FK>>
+}
+
+entity "medio_pago"{
+  
+}
+
+entity "usuario" {
+  * usuario_codigo: INT <<PK>>
+  --
+    usuario_nombre: NVARCHAR(50)
+    usuario_pass: NVARCHAR(50)
+    usuario_fecha_creacion: DATE
+    usuario_mail: NVARCHAR(50)
+}
+
+entity "domicilio" {
+  domicilio_codigo: INT <<PK>>
+  --
+    domicilio_calle: NVARCHAR(50)
+    domicilio_nro_calle: DECIMAL(18, 0)
+    domicilio_piso: DECIMAL(18, 0)
+    domicilio_depto: NVARCHAR(50)
+    domicilio_cp: NVARCHAR(50)
+    domicilio_localidad: INT <<FK>>
+    domicilio_provincia: NCHAR(2) <<FK>>
+}
+
+entity "usuario_domicilio" {
+  usuarioDomicilio_usuario_codigo: INT <<PK, FK>>
+  usuarioDomicilio_domicilio_codigo: INT <<PK, FK>>
+  --
+}
+
+entity "localidad" {
+  localidad_codigo: INT <<PK>>
+  --
+    localidad_descripcion: NVARCHAR(50) 
+}
+
+entity "provincia"{
+  * provincia_codigo: NCHAR(2)
+  --
+    provincia_nombre: NVARCHAR(50)
+}
+
+entity "envio" {
+  * envio_codigo: INT <<PK>>
+  --
+   envio_venta_codigo: INT <<FK>>
+   envio_domicilio_codigo: INT <<FK>>
+   envio_fecha_programada: DATE
+   envio_hora_inicio: DECIMAL(18, 0)
+   envio_hora_fin:  DECIMAL(18, 0)
+   envio_costo: DECIMAL(18, 2)
+   envio_fecha_entrega: DATETIME
+   envio_tipo: INT <<FK>>
+}
+
+entity "tipo_envio" {
+  * tipoEnvio_codigo INT <<PK>>
+  --
+    tipoEnvio_medio NVARCHAR(50) NULL
+}
+
+entity "factura" {
+  * factura_numero: DECIMAL(18, 0) NULL <<PK>>
+  --
+    factura_fecha: DATE NULL
+    factura_total: DECIMAL(18, 2) NULL
+    factura_usuario: INT <<FK>> 
+}
+
+entity "factura_detalle" {
+  * facturaDetalle_codigo: INT <<FK>>
+  --
+    facturaDetalle_tipo: NVARCHAR(50) 
+    facturaDetalle_precio_unitario: DECIMAL(18, 2)
+    facturaDetalle_cantidad: DECIMAL(18, 0)
+    facturaDetalle_subtotal: DECIMAL(18, 2)
+    * facturaDetalle_publicacion: INT <<FK>> 
+    * facturaDetalle_concepto_codigo: INT <<FK>>
+    * facturaDetalle_factura_numero: DECIMAL(18, 0) <<FK>>
+    'TODO: una factura puede tener una publicación o varias? si es una, movemos la publicación a factura
+}
+
+entity "concepto" {
+  * concepto_codigo: INT <<PK>>
+  --
+    concepto_nombre: NVARCHAR(50)
+}
+
+concepto ||--|{ factura_detalle: "facturaDetalle_concepto_codigo"
+factura_detalle }|--|| factura: "facturaDetalle_factura_numero"
+
+publicacion }o--|| producto : "publicacion_producto_codigo"
+producto }o--|| subrubro : "producto_subrubro_codigo"
+subrubro }|--|| rubro : "subrubro_rubro_codigo"
+publicacion }|--|| vendedor : "publicacion_vendedor_codigo"
+publicacion }|--|| almacen : "publicacion_almacen_codigo"
+
+venta }|--|| cliente : "venta_cliente_codigo"
+detalle_venta }|--|| venta : "detalleVenta_venta_nro"
+detalle_venta }|--|| publicacion : "detalleVenta_publicacion_codigo"
+
+pago }|--|| venta : "pago_venta_nro"
+factura }|--|| vendedor : "factura_vendedor_codigo"
+
+domicilio }o--|| provincia: "domicilio_provincia"
+domicilio -- localidad: "domicilio_localidad"
+
+usuario_domicilio |o--|| domicilio: "usuarioDomicilio_domicilio_codigo"
+usuario_domicilio }o--|| usuario: "usuarioDomicilio_usuario_codigo"
+modelo ||--o{ producto: "producto_mod_codigo"
+vendedor |o--|| usuario: "vendedor_usuario_codigo"
+cliente |o--|| usuario: "cliente_usuario_codigo" 
+
+envio }o--|| tipo_envio : "tipoEnvio_codigo"
+envio }o--|| domicilio : "domicilio_codigo"
+envio ||--|| venta : "envio_venta"
+
+@enduml
