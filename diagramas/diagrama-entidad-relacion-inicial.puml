@@ -96,12 +96,20 @@ entity "pago" {
     pago_fecha_vencimiento_tarjeta: DATE
     pago_cant_cuotas: DECIMAL(18, 0)
     pago_medio_pago: NVARCHAR(50)
-    pago_tipo_medio_pago: NVARCHAR(50)
     * pago_venta_nro: INT <<FK>>
 }
 
-entity "medio_pago"{
-  
+entity "medio_pago" {
+  medioPago_codigo: INT <<PK>>
+  --
+    medioPago_nombre: NVARCHAR(50)
+    medioPago_tipoMedioPago_codigo: INT <<FK>>
+}
+
+entity "tipo_medio_pago" {
+  tipoMedioPago_codigo: INT <<PK>>
+  --
+    tipoMedioPago_nombre: NVARCHAR(50)
 }
 
 entity "usuario" {
@@ -217,5 +225,8 @@ cliente |o--|| usuario: "cliente_usuario_codigo"
 envio }o--|| tipo_envio : "tipoEnvio_codigo"
 envio }o--|| domicilio : "domicilio_codigo"
 envio ||--|| venta : "envio_venta"
+
+pago }o--|| medio_pago
+medio_pago }o--|| tipo_medio_pago
 
 @enduml
