@@ -95,7 +95,7 @@ entity "pago" {
     pago_nro_tarjeta: NVARCHAR(50)
     pago_fecha_vencimiento_tarjeta: DATE
     pago_cant_cuotas: DECIMAL(18, 0)
-    pago_medio_pago: NVARCHAR(50)
+    pago_medioPago_codigo: INT <<FK>>
     * pago_venta_nro: INT <<FK>>
 }
 
@@ -226,7 +226,7 @@ envio }o--|| tipo_envio : "tipoEnvio_codigo"
 envio }o--|| domicilio : "domicilio_codigo"
 envio ||--|| venta : "envio_venta"
 
-pago }o--|| medio_pago
-medio_pago }o--|| tipo_medio_pago
+pago }o--|| medio_pago : "pago_medioPago_codigo"
+medio_pago }o--|| tipo_medio_pago : "medioPago_tipoMedioPago_codigo"
 
 @enduml
