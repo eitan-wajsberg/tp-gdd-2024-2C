@@ -210,20 +210,20 @@ venta }|--|| cliente : "venta_cliente_codigo"
 detalle_venta }|--|| venta : "detalleVenta_venta_nro"
 detalle_venta }|--|| publicacion : "detalleVenta_publicacion_codigo"
 
-pago }|--|| venta : "pago_venta_nro"
+pago }|-left-|| venta : "pago_venta_nro"
 factura }|--|| vendedor : "factura_vendedor_codigo"
 
-domicilio }o--|| provincia: "domicilio_provincia"
-domicilio -- localidad: "domicilio_localidad"
+domicilio }o-up-|| provincia: "domicilio_provincia"
+domicilio -up- localidad: "domicilio_localidad"
 
-usuario_domicilio |o--|| domicilio: "usuarioDomicilio_domicilio_codigo"
+usuario_domicilio |o-left-|| domicilio: "usuarioDomicilio_domicilio_codigo"
 usuario_domicilio }o--|| usuario: "usuarioDomicilio_usuario_codigo"
 modelo ||--o{ producto: "producto_mod_codigo"
 vendedor |o--|| usuario: "vendedor_usuario_codigo"
 cliente |o--|| usuario: "cliente_usuario_codigo" 
 
-envio }o--|| tipo_envio : "tipoEnvio_codigo"
-envio }o--|| domicilio : "domicilio_codigo"
+envio }o-up-|| tipo_envio : "tipoEnvio_codigo"
+envio }o-right-|| domicilio : "domicilio_codigo"
 envio ||--|| venta : "envio_venta"
 
 pago }o--|| medio_pago : "pago_medioPago_codigo"
