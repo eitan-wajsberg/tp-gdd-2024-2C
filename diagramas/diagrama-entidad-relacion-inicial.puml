@@ -3,6 +3,9 @@
 entity "publicacion" {
   * publicacion_codigo: INT <<PK>>
   --
+    * publicacion_producto_codigo: NVARCHAR(50) <<FK>>
+    * publicacion_vendedor_codigo: INT <<FK>>
+    * publicacion_almacen_codigo: INT <<FK>>
     publicacion_descripcion: NVARCHAR(50)
     ' publicacion_fecha_alta: DATE | Preguntar!!!
     * publicacion_fecha_inicio: DATE
@@ -11,20 +14,17 @@ entity "publicacion" {
     * publicacion_precio: DECIMAL(18, 2)
     * publicacion_costo: DECIMAL(18, 2)
     * publicacion_porc_venta: DECIMAL(18, 2)
-    * publicacion_producto_codigo: NVARCHAR(50) <<FK>>
-    * publicacion_vendedor_codigo: INT <<FK>>
-    * publicacion_almacen_codigo: INT <<FK>>
     producto_fecha_modificacion: DATE
 }
 
 entity "producto" {
   * producto_codigo: NVARCHAR(50) <<PK>>
   --
-    * producto_descripcion: NVARCHAR(60)
     producto_marca_codigo: INT <<FK>>
-    * producto_precio: DECIMAL(18, 2)
     producto_mod_codigo: DECIMAL(18, 0) <<FK>>
     * producto_subrubro_codigo: INT <<FK>>
+    * producto_descripcion: NVARCHAR(60)
+    * producto_precio: DECIMAL(18, 2)
     * producto_fecha_alta: DATE
     producto_fecha_modificacion: DATE
 }
@@ -44,8 +44,8 @@ entity "modelo"{
 entity "subrubro" {
   * subrubro_codigo: INT <<PK>>
   --
-    * subrubro_descripcion: NVARCHAR(50)
     * subrubro_rubro_codigo: INT <<FK>>
+    * subrubro_descripcion: NVARCHAR(50)
 }
 
 entity "rubro" {
@@ -57,154 +57,159 @@ entity "rubro" {
 entity "vendedor" {
   * vendedor_codigo: INT <<PK>>
   --
-    vendedor_razon_social: NVARCHAR(500)
-    vendedor_cuit: NVARCHAR(500)
     * vendedor_usuario_codigo: INT <<FK>>
-    vendedor_domicilio: INT <<FK>>  
+    * vendedor_razon_social: NVARCHAR(50) 
+    * vendedor_cuit: NVARCHAR(50)
 }
 
 entity "almacen" {
   * almacen_codigo: INT <<PK>>
   --
-    almacen_docimilio: INT <<FK>>
+    * almacen_docimilio_codigo: INT <<FK>>
 }
 
 entity "venta" {
   * venta_codigo: DECIMAL(18, 0) <<PK>>
   --
-    venta_fecha: DATETIME
-    venta_total: DECIMAL(10, 2)
     * venta_cliente_codigo: INT <<FK>>
+    * venta_fecha: DATETIME
+    * venta_total: DECIMAL(10, 2)
 }
 
 entity "detalle_venta" {
   * detalleVenta_codigo: INT <<PK>>
   --
-    detalleVenta_precio: DECIMAL(18, 2)
-    detalleVenta_cantidad: DECIMAL(18, 0)
-    detalleVenta_subtotal: DECIMAL(18, 2)
+    * detalleVenta_venta_codigo: DECIMAL(18,0) <<FK>>
     * detalleVenta_publicacion_codigo: INT <<FK>>
-    * detalleVenta_venta_nro: INT <<FK>>
+    * detalleVenta_precio: DECIMAL(18, 2)
+    * detalleVenta_cantidad: DECIMAL(18, 0)
+    * detalleVenta_subtotal: DECIMAL(18, 2)
 }
 
 entity "cliente" {
   * cliente_codigo: INT <<PK>>
   --
-    cliente_nombre: NVARCHAR(50)
-    cliente_apellido: NVARCHAR(50)
-    cliente_fecha_nacimiento: DATE
-    cliente_dni: DECIMAL(18, 0)
     * cliente_usuario_codigo: INT <<FK>> 
+    * cliente_nombre: NVARCHAR(50)
+    * cliente_apellido: NVARCHAR(50)
+    * cliente_fecha_nacimiento: DATE
+    * cliente_dni: DECIMAL(18, 0)
 }
 
 entity "pago" {
-  * pago_nro: INT <<PK>>
+  * pago_codigo: INT <<PK>>
   --
-    pago_fecha: DATE
-    pago_importe: DECIMAL(18, 2)
-    pago_nro_tarjeta: NVARCHAR(50)
-    pago_fecha_vencimiento_tarjeta: DATE
+    pago_tarjeta_nro: NVARCHAR(50) <<FK>>
+    * pago_medioPago_codigo: INT <<FK>>
+    * pago_venta_codigo: INT <<FK>>
+    * pago_fecha: DATE
+    * pago_importe: DECIMAL(18, 2)
     pago_cant_cuotas: DECIMAL(18, 0)
-    pago_medioPago_codigo: INT <<FK>>
-    * pago_venta_nro: INT <<FK>>
+    ' y para otros tipos de pago que no sean la tarjeta?
+}
+
+entity "tarjeta" {
+  * tarjeta_nro: NVARCHAR(50) <<PK>>
+  --
+    * tarjeta_fecha_vencimiento: DATE
 }
 
 entity "medio_pago" {
-  medioPago_codigo: INT <<PK>>
+  * medioPago_codigo: INT <<PK>>
   --
-    medioPago_nombre: NVARCHAR(50)
-    medioPago_tipoMedioPago_codigo: INT <<FK>>
+   * medioPago_tipoMedioPago_codigo: INT <<FK>>
+   * medioPago_nombre: NVARCHAR(50)
 }
 
 entity "tipo_medio_pago" {
-  tipoMedioPago_codigo: INT <<PK>>
+  * tipoMedioPago_codigo: INT <<PK>>
   --
-    tipoMedioPago_nombre: NVARCHAR(50)
+    * tipoMedioPago_nombre: NVARCHAR(50)
 }
 
 entity "usuario" {
   * usuario_codigo: INT <<PK>>
   --
-    usuario_nombre: NVARCHAR(50)
-    usuario_pass: NVARCHAR(50)
-    usuario_fecha_creacion: DATE
-    usuario_mail: NVARCHAR(50)
+    * usuario_nombre: NVARCHAR(50)
+    * usuario_pass: NVARCHAR(50)
+    * usuario_fecha_creacion: DATE
+    * usuario_mail: NVARCHAR(50)
+    ' Un usuario puede tener mas de un mail?
 }
 
 entity "domicilio" {
-  domicilio_codigo: INT <<PK>>
+  * domicilio_codigo: INT <<PK>>
   --
-    domicilio_calle: NVARCHAR(50)
-    domicilio_nro_calle: DECIMAL(18, 0)
+    * domicilio_localidad: INT <<FK>>
+    * domicilio_provincia: NCHAR(2) <<FK>>
+    * domicilio_calle: NVARCHAR(50)
+    * domicilio_nro_calle: DECIMAL(18, 0)
     domicilio_piso: DECIMAL(18, 0)
     domicilio_depto: NVARCHAR(50)
-    domicilio_cp: NVARCHAR(50)
-    domicilio_localidad: INT <<FK>>
-    domicilio_provincia: NCHAR(2) <<FK>>
+    * domicilio_cp: NVARCHAR(50)
 }
 
 entity "usuario_domicilio" {
-  usuarioDomicilio_usuario_codigo: INT <<PK, FK>>
-  usuarioDomicilio_domicilio_codigo: INT <<PK, FK>>
+  * usuarioDomicilio_usuario_codigo: INT <<PK, FK>>
+  * usuarioDomicilio_domicilio_codigo: INT <<PK, FK>>
   --
 }
 
 entity "localidad" {
-  localidad_codigo: INT <<PK>>
+  * localidad_codigo: INT <<PK>>
   --
-    localidad_descripcion: NVARCHAR(50) 
+    * localidad_nombre: NVARCHAR(50) 
 }
 
 entity "provincia"{
   * provincia_codigo: NCHAR(2)
   --
-    provincia_nombre: NVARCHAR(50)
+    * provincia_nombre: NVARCHAR(50)
 }
 
 entity "envio" {
   * envio_codigo: INT <<PK>>
   --
-   envio_venta_codigo: INT <<FK>>
-   envio_domicilio_codigo: INT <<FK>>
-   envio_fecha_programada: DATE
+   * envio_venta_codigo: DECIMAL(18, 0) <<FK>>
+   * envio_domicilio_codigo: INT <<FK>>
+   * envio_tipoEnvio_codigo: INT <<FK>>
+   * envio_fecha_programada: DATE
    envio_hora_inicio: DECIMAL(18, 0)
    envio_hora_fin:  DECIMAL(18, 0)
-   envio_costo: DECIMAL(18, 2)
+   * envio_costo: DECIMAL(18, 2)
    envio_fecha_entrega: DATETIME
-   envio_tipo: INT <<FK>>
+   ' estado?
 }
 
 entity "tipo_envio" {
-  * tipoEnvio_codigo INT <<PK>>
+  * tipoEnvio_codigo: INT <<PK>>
   --
-    tipoEnvio_medio NVARCHAR(50) NULL
+    * tipoEnvio_medio: NVARCHAR(50)
 }
 
 entity "factura" {
-  * factura_numero: DECIMAL(18, 0) NULL <<PK>>
+  * factura_numero: DECIMAL(18, 0) <<PK>>
   --
-    factura_fecha: DATE NULL
-    factura_total: DECIMAL(18, 2) NULL
-    factura_usuario: INT <<FK>> 
+    * factura_usuario: INT <<FK>> 
+    * factura_fecha: DATE
+    * factura_total: DECIMAL(18, 2)
 }
 
 entity "factura_detalle" {
-  * facturaDetalle_codigo: INT <<FK>>
+  * facturaDetalle_codigo: INT <<PK>>
   --
-    facturaDetalle_tipo: NVARCHAR(50) 
-    facturaDetalle_precio_unitario: DECIMAL(18, 2)
-    facturaDetalle_cantidad: DECIMAL(18, 0)
-    facturaDetalle_subtotal: DECIMAL(18, 2)
+    * facturaDetalle_factura_numero: DECIMAL(18, 0) <<FK>>
     * facturaDetalle_publicacion: INT <<FK>> 
     * facturaDetalle_concepto_codigo: INT <<FK>>
-    * facturaDetalle_factura_numero: DECIMAL(18, 0) <<FK>>
-    'TODO: una factura puede tener una publicación o varias? si es una, movemos la publicación a factura
+    * facturaDetalle_precio_unitario: DECIMAL(18, 2)
+    * facturaDetalle_cantidad: DECIMAL(18, 0)
+    * facturaDetalle_subtotal: DECIMAL(18, 2)
 }
 
 entity "concepto" {
   * concepto_codigo: INT <<PK>>
   --
-    concepto_nombre: NVARCHAR(50)
+    * concepto_nombre: NVARCHAR(50)
 }
 
 concepto ||--|{ factura_detalle: "facturaDetalle_concepto_codigo"
@@ -212,6 +217,7 @@ factura_detalle }|--|| factura: "facturaDetalle_factura_numero"
 
 publicacion }o--|| producto : "publicacion_producto_codigo"
 producto }o--|| subrubro : "producto_subrubro_codigo"
+producto }o--|| marca : "producto_marca_codigo"
 subrubro }|--|| rubro : "subrubro_rubro_codigo"
 
 publicacion }|--|| vendedor : "publicacion_vendedor_codigo"
@@ -239,5 +245,6 @@ envio ||--|| venta : "envio_venta"
 
 pago }o--|| medio_pago : "pago_medioPago_codigo"
 medio_pago }o--|| tipo_medio_pago : "medioPago_tipoMedioPago_codigo"
+pago }|--|| tarjeta: "pago_tarjeta_nro"
 
 @enduml
