@@ -1,47 +1,57 @@
 @startuml diagrama-entidad-relacion-inicial
 
 entity "publicacion" {
-  * publicacion_codigo: DECIMAL(18,0) <<PK>>
+  * publicacion_codigo: INT <<PK>>
   --
     publicacion_descripcion: NVARCHAR(50)
-    publicacion_fecha_inicio: DATE
+    ' publicacion_fecha_alta: DATE | Preguntar!!!
+    * publicacion_fecha_inicio: DATE
     publicacion_fecha_fin: DATE
-    publicacion_stock: DECIMAL(18,0)
-    publicacion_precio: DECIMAL(18, 2)
-    publicacion_costo: DECIMAL(18, 2)
-    publicacion_porc_venta: DECIMAL(18, 2)
+    * publicacion_stock: DECIMAL(18,0)
+    * publicacion_precio: DECIMAL(18, 2)
+    * publicacion_costo: DECIMAL(18, 2)
+    * publicacion_porc_venta: DECIMAL(18, 2)
     * publicacion_producto_codigo: NVARCHAR(50) <<FK>>
     * publicacion_vendedor_codigo: INT <<FK>>
     * publicacion_almacen_codigo: INT <<FK>>
+    producto_fecha_modificacion: DATE
 }
 
 entity "producto" {
   * producto_codigo: NVARCHAR(50) <<PK>>
   --
-    producto_descripcion: NVARCHAR(60)
-    producto_marca: NVARCHAR(50)
-    producto_precio: DECIMAL(18, 2)
+    * producto_descripcion: NVARCHAR(60)
+    producto_marca_codigo: INT <<FK>>
+    * producto_precio: DECIMAL(18, 2)
     producto_mod_codigo: DECIMAL(18, 0) <<FK>>
-    producto_subRubro_codigo: NVARCHAR(50) <<FK>>
+    * producto_subrubro_codigo: INT <<FK>>
+    * producto_fecha_alta: DATE
+    producto_fecha_modificacion: DATE
+}
+
+entity "marca"{
+  * marca_codigo: INT <<PK>>
+  --
+    * marca_descripcion: NVARCHAR(50)
 }
 
 entity "modelo"{
   * modelo_codigo: DECIMAL(18, 0) <<PK>>
   --
-    modelo_descripcion: NVARCHAR(50)
+    * modelo_descripcion: NVARCHAR(50)
 }
 
 entity "subrubro" {
-  * subrubro_codigo: NVARCHAR(50) <<PK>>
+  * subrubro_codigo: INT <<PK>>
   --
-    subrubro_descripcion: NVARCHAR(50)
+    * subrubro_descripcion: NVARCHAR(50)
     * subrubro_rubro_codigo: INT <<FK>>
 }
 
 entity "rubro" {
   * rubro_codigo: INT <<PK>>
   --
-    rubro_descripcion: NVARCHAR(50)
+    * rubro_descripcion: NVARCHAR(50)
 }
 
 entity "vendedor" {
@@ -60,7 +70,7 @@ entity "almacen" {
 }
 
 entity "venta" {
-  * venta_codigo: INT <<PK>>
+  * venta_codigo: DECIMAL(18, 0) <<PK>>
   --
     venta_fecha: DATETIME
     venta_total: DECIMAL(10, 2)
@@ -203,6 +213,7 @@ factura_detalle }|--|| factura: "facturaDetalle_factura_numero"
 publicacion }o--|| producto : "publicacion_producto_codigo"
 producto }o--|| subrubro : "producto_subrubro_codigo"
 subrubro }|--|| rubro : "subrubro_rubro_codigo"
+
 publicacion }|--|| vendedor : "publicacion_vendedor_codigo"
 publicacion }|--|| almacen : "publicacion_almacen_codigo"
 
