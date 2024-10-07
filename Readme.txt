@@ -1,15 +1,14 @@
-Grupo 61 - NJRE
-
-Responsable del grupo:  
-- Nombre: Rocío Ochoa Charlín  
-- Correo electrónico: rochoacharlin@frba.utn.edu.ar
+Curso: K3521
+Número de grupo: 61
 
 Integrantes del grupo:
-------------------------------------------------------
-| Nombre completo                | Legajo   | Curso  |
-|--------------------------------|----------|--------|
-| Rocío Ochoa Charlín            | 2091150  | K3521  |
-| Eitan Wajsberg                 | 2092360  | K3522  |
-| Nehuen Balian Amaros           | 2086980  | K3522  |
-| Nahuel Joaquín Coaricona Cruz  | 2032442  | K3521  |
-------------------------------------------------------
+---------------------------------------------
+| Nombre completo                | Legajo   | 
+|--------------------------------|----------|
+| Rocío Ochoa Charlín            | 2091150  | 
+| Eitan Wajsberg                 | 2092360  | 
+| Nehuen Balian Amaros           | 2086980  | 
+| Nahuel Joaquín Coaricona Cruz  | 2032442  |
+---------------------------------------------
+
+Correo electrónico del responsable del grupo: rochoacharlin@frba.utn.edu.ar
