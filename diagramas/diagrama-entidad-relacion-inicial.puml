@@ -245,15 +245,15 @@ publicacion }|--|| almacen
 almacen ||-left-|{ historial_costo_almacen
 almacen |o--|| domicilio
 
-venta }|--|| cliente
+venta }o--|| cliente
 detalle_venta }|--|| venta
-detalle_venta }|--|| publicacion 
+detalle_venta }o--|| publicacion
 
-pago }|--|| venta
-factura }|--|| vendedor
+pago ||--|| venta
+factura }o--|| vendedor
 
 domicilio }o--|| provincia
-domicilio }o--o| localidad
+domicilio }o--|| localidad
 
 usuario_domicilio |o-right-|| domicilio
 usuario_domicilio }o--|| usuario
