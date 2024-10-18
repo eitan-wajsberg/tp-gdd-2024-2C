@@ -13,7 +13,7 @@ entity "publicacion" {
     * publicacion_precio: DECIMAL(18, 2)
     * publicacion_costo: DECIMAL(18, 2)
     * publicacion_porc_venta: DECIMAL(18, 2)
-    producto_fecha_modificacion: DATE
+    publicacion_fecha_modificacion: DATE
 }
 
 entity "producto" {
