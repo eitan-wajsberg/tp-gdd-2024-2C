@@ -5,6 +5,63 @@ GO
 -------------------------------------------------------------------------------------------------
 -- CREACIÓN DE TABLAS
 -------------------------------------------------------------------------------------------------
+CREATE TABLE NJRE.publicacion (
+    publicacion_id INT IDENTITY PRIMARY KEY, --IDENTITY(1,1), duda se repite el codigo en la primarykey?
+    publicacion_producto_id INT NOT NULL FOREIGN KEY REFERENCES NJRE.producto(producto_id),
+    publicacion_vendedor_id INT NOT NULL FOREIGN KEY REFERENCES NJRE.vendedor(vendedor_id),
+    publicacion_almacen_id INT NOT NULL FOREIGN KEY REFERENCES NJRE.almacen(almacen_id),
+    publicacion_descripcion NVARCHAR(50),
+    publicacion_fecha_inicio DATE NOT NULL,
+    publicacion_fecha_fin DATE NOT NULL,
+    publicacion_stock DECIMAL(18, 0) NOT NULL,
+    publicacion_precio DECIMAL(18, 2) NOT NULL,
+    publicacion_costo DECIMAL(18, 2) NOT NULL,
+    publicacion_porc_venta DECIMAL(18, 2) NOT NULL,
+    publicacion_fecha_modificacion DATE
+);
+
+CREATE TABLE NJRE.producto (
+    producto_id  INT PRIMARY KEY IDENTITY(1,1),
+    producto_marca_id INT NOT NULL FOREIGN KEY REFERENCES NJRE.marca(marca_id),  
+    producto_mod_id DECIMAL(18, 0) NOT NULL FOREIGN KEY REFERENCES NJRE.modelo(modelo_id), 
+    producto_subrubro_id INT NOT NULL FOREIGN KEY REFERENCES NJRE.subrubro(subrubro_id),  
+    producto_codigo NVARCHAR(50), 
+    producto_descripcion NVARCHAR(50) NOT NULL,  
+    producto_precio DECIMAL(18, 2) NOT NULL,  
+    producto_fecha_alta DATE NOT NULL, 
+    producto_fecha_modificacion DATE 
+);
+
+
+CREATE TABLE NJRE.marca (
+    marca_id INT IDENTITY PRIMARY KEY, -- tiene un codigo en la tabla maestra, lo hago sin autoincremento
+    marca_descripcion NVARCHAR(50) NOT NULL
+);
+
+
+CREATE TABLE NJRE.modelo (
+    modelo_id INT IDENTITY PRIMARY KEY,-- tiene un codigo en la tabla maestra, lo hago sin autoincremento
+    modelo_descripcion NVARCHAR(50) NOT NULL,
+);
+
+CREATE TABLE NJRE.subrubro (
+    subrubro_id INT PRIMARY KEY IDENTITY(1,1),
+    subrubro_rubro_id INT NOT NULL FOREIGN KEY REFERENCES NJRE.rubro(rubro_id),
+    subrubro_descripcion NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE NJRE.rubro (
+    rubro_id INT PRIMARY KEY IDENTITY(1,1),
+    rubro_descripcion NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE NJRE.vendedor (
+    vendedor_id INT PRIMARY KEY IDENTITY(1,1),
+    vendedor_usuario_id INT NOT NULL FOREIGN KEY REFERENCES NJRE.usuario(usuario_id), 
+    vendedor_razon_social NVARCHAR(50) NOT NULL,
+    vendedor_cuit NVARCHAR(50) NOT NULL
+);
+
 CREATE TABLE NJRE.almacen (
     almacen_id INT PRIMARY KEY, -- No la hago autoincremental, ya que posee un codigo en la tabla maestra
     almacen_docimilio_id INT NOT NULL FOREIGN KEY REFERENCES NJRE.domicilio(domicilio_id),
