@@ -182,7 +182,8 @@ CREATE TABLE NJRE.envio(
 	envio_hora_fin decimal(18,0),
 	envio_costo decimal(18,2) NOT NULL,
 	envio_fecha_entrega DATETIME,
-	envio_estado nvarchar(20) NOT NULL, 	
+	envio_estado nvarchar(20) NOT NULL, 
+	CONSTRAINT CHK_EnvioEstado CHECK (envio_estado IN ('En preparación', 'En camino', 'Entregado'))
 );
 CREATE TABLE NJRE.tipo_envio(
 	tipoEnvio_id int IDENTITY(1, 1) NOT NULL,
@@ -193,6 +194,7 @@ CREATE TABLE NJRE.historial_estado_envio(
 	historialEstadoEnvio_envio_id INT NOT NULL,
 	historialEstadoEnvio_fecha DATE NOT NULL,
 	historialEstadoEnvio_estado nvarchar(20) NOT NULL,
+	CONSTRAINT CHK_HistorialEstadoEnvioEstado CHECK (historialEstadoEnvio_estado IN ('En preparación', 'En camino', 'Entregado'))
 );
 CREATE TABLE NJRE.factura(
 	factura_id decimal(18,0) IDENTITY(1, 1) NOT NULL,
@@ -515,13 +517,17 @@ GO
 
 CREATE PROCEDURE NJRE.migrar_almacen AS
 BEGIN
-    INSERT INTO NJRE.modelo (almacen_id, almacen_docimilio_id, almacen_nombre, almacen_costo_dia)
+    INSERT INTO NJRE.almacen (almacen_id, almacen_docimilio_id, almacen_nombre, almacen_costo_dia)
     SELECT DISTINCT almacen_codigo, domicilio_id, almacen_calle + ' ' + CAST(almacen_nro_calle AS NVARCHAR), almacen_costo_dia_al
     FROM gd_esquema.Maestra 
         INNER JOIN NJRE.localidad ON localidad_nombre = almacen_localidad
         INNER JOIN NJRE.provincia ON provincia_nombre = almacen_provincia
         INNER JOIN NJRE.domicilio ON domicilio_calle = almacen_calle AND domicilio_nro_calle = almacen_nro_calle AND domicilio_localidad = localidad_id AND domicilio_provincia = provincia_id
     WHERE almacen_codigo IS NOT NULL
+
+	INSERT INTO NJRE.historial_costo_almacen(historialCostoAlmacen_almacen_id, historialCostoAlmacen_fecha, historialCostoAlmacen_costo_dia)
+	SELECT almacen_id, GETDATE(), almacen_costo_dia
+	FROM NJRE.almacen	
 END
 GO
 
@@ -562,7 +568,7 @@ BEGIN
     SELECT marca_id, producto_mod_codigo, subrubro_id, producto_codigo, producto_precio, MIN(publicacion_fecha)
     FROM gd_esquema.Maestra 
     INNER JOIN NJRE.marca on marca_nombre = producto_marca
-    INNER JOIN NJRE.subrubro on subrubro_descripcion = producto_sub_rubro
+    INNER JOIN NJRE.subrubro on subrubro_descripcion = producto_sub_rubro and subrubro_rubro_id = producto_mod_codigo
     WHERE producto_codigo IS NOT NULL
     group by producto_marca, producto_mod_codigo, producto_sub_rubro, producto_codigo, producto_precio
 END
@@ -585,13 +591,26 @@ BEGIN
     INSERT INTO NJRE.publicacion (publicacion_id, publicacion_producto_id, publicacion_vendedor_id, publicacion_almacen_id, 
         publicacion_descripcion, publicacion_fecha_inicio, publicacion_fecha_fin, publicacion_stock, publicacion_precio,
         publicacion_costo, publicacion_porc_venta)
-    SELECT DISTINCT publicacion_codigo --incompleto
-    FROM gd_esquema.Maestra 
-        INNER JOIN NJRE.subrubro ON 1=1 --incompleto
-        INNER JOIN NJRE.marca ON 1=1
-        INNER JOIN NJRE.producto ON 1=1
-        INNER JOIN NJRE.vendedor ON 1=1
+    SELECT DISTINCT publicacion_codigo, producto_id, vendedor_id, almacen_id, 
+		PUBLICACION_DESCRIPCION, PUBLICACION_FECHA, PUBLICACION_FECHA_V, PUBLICACION_STOCK, PUBLICACION_PRECIO,
+		PUBLICACION_COSTO, PUBLICACION_PORC_VENTA
+    FROM gd_esquema.Maestra m
+        INNER JOIN NJRE.subrubro ON subrubro_descripcion = producto_sub_rubro and subrubro_rubro_id = producto_mod_codigo
+        INNER JOIN NJRE.marca ON marca_nombre = producto_marca
+        INNER JOIN NJRE.producto ON producto_marca_id = marca_id and producto_subrubro_id = subrubro_id
+        INNER JOIN NJRE.vendedor n ON n.vendedor_razon_social = m.vendedor_razon_social
         INNER JOIN NJRE.almacen ON almacen_id = almacen_codigo
-    WHERE publicacion_codigo IS NOT NULL
+    WHERE publicacion_codigo is not null
+		and PRODUCTO_CODIGO is not null
+END
+GO
+
+CREATE PROCEDURE NJRE.migrar_envio AS
+BEGIN
+	-- TODO: acá agregar la migración de envío o7
+	
+	INSERT INTO NJRE.historial_estado_envio(historialEstadoEnvio_envio_id, historialEstadoEnvio_fecha, historialEstadoEnvio_estado)
+	SELECT envio_id, envio_fecha_programada, 'En preparación' -- todos los envíos tienen fecha para el 2025 recién, por eso directamente se le pone este estado
+	FROM NJRE.envio
 END
 GO
