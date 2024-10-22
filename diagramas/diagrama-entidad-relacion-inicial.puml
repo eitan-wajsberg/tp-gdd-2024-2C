@@ -17,7 +17,7 @@ entity "publicacion" {
 }
 
 entity "producto" {
-  * producto_id: NVARCHAR(50) **<<PK>>** 
+  * producto_id: INT **<<PK>>** 
   --
     * producto_marca_id: INT **<<FK>>**
     * producto_mod_id: DECIMAL(18, 0) **<<FK>>**
@@ -63,7 +63,7 @@ entity "vendedor" {
 }
 
 entity "almacen" {
-  * almacen_id: INT **<<PK>>**
+  * almacen_id: DECIMAL(18, 0) **<<PK>>**
   --
     * almacen_docimilio_id: INT **<<FK>>**
     almacen_nombre: NVARCHAR(50)
