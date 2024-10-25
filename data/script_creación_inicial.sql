@@ -348,7 +348,6 @@ ADD
     CONSTRAINT FK_Envio_Domicilio FOREIGN KEY (envio_domicilio_id) REFERENCES NJRE.domicilio,
     CONSTRAINT FK_Envio_Venta FOREIGN KEY (envio_venta_id) REFERENCES NJRE.venta;
 
-
 ALTER TABLE NJRE.historial_estado_envio 
 ADD CONSTRAINT FK_Historial_Envio FOREIGN KEY (historialEstadoEnvio_envio_id) REFERENCES NJRE.envio;
 
@@ -515,19 +514,17 @@ GO
 CREATE PROCEDURE NJRE.migrar_domicilio AS
 BEGIN
     INSERT INTO NJRE.domicilio (domicilio_calle, domicilio_cp, domicilio_nro_calle, domicilio_piso, domicilio_depto, domicilio_provincia, domicilio_localidad)
-        SELECT DISTINCT cli_usuario_domicilio_calle, cli_usuario_domicilio_cp, cli_usuario_domicilio_nro_calle, cli_usuario_domicilio_piso, cli_usuario_domicilio_depto, provincia_id, localidad_id
-        FROM gd_esquema.Maestra 
-            INNER JOIN NJRE.provincia ON cli_usuario_domicilio_provincia = provincia_nombre
-            INNER JOIN NJRE.localidad ON cli_usuario_domicilio_localidad = localidad_nombre
-        WHERE cli_usuario_domicilio_calle IS NOT NULL -- esta bien esto?
-        UNION
-        SELECT DISTINCT ven_usuario_domicilio_calle, ven_usuario_domicilio_cp, ven_usuario_domicilio_nro_calle, ven_usuario_domicilio_piso, ven_usuario_domicilio_depto, provincia_id, localidad_id
-        FROM gd_esquema.Maestra 
-            INNER JOIN NJRE.provincia ON cli_usuario_domicilio_provincia = provincia_nombre
-            INNER JOIN NJRE.localidad ON cli_usuario_domicilio_localidad = localidad_nombre
-        WHERE ven_usuario_domicilio_calle IS NOT NULL -- esta bien esto?
-
-        -- poblar la tabla usuario_domicilio
+    SELECT DISTINCT cli_usuario_domicilio_calle, cli_usuario_domicilio_cp, cli_usuario_domicilio_nro_calle, cli_usuario_domicilio_piso, cli_usuario_domicilio_depto, provincia_id, localidad_id
+    FROM gd_esquema.Maestra 
+        INNER JOIN NJRE.provincia ON cli_usuario_domicilio_provincia = provincia_nombre
+        INNER JOIN NJRE.localidad ON cli_usuario_domicilio_localidad = localidad_nombre
+    WHERE cli_usuario_domicilio_calle IS NOT NULL -- REVISAR
+    UNION
+    SELECT DISTINCT ven_usuario_domicilio_calle, ven_usuario_domicilio_cp, ven_usuario_domicilio_nro_calle, ven_usuario_domicilio_piso, ven_usuario_domicilio_depto, provincia_id, localidad_id
+    FROM gd_esquema.Maestra 
+        INNER JOIN NJRE.provincia ON cli_usuario_domicilio_provincia = provincia_nombre
+        INNER JOIN NJRE.localidad ON cli_usuario_domicilio_localidad = localidad_nombre
+    WHERE ven_usuario_domicilio_calle IS NOT NULL -- REVISAR
 END
 GO
 
@@ -628,14 +625,36 @@ IF Object_id('NJRE.migrar_usuario') IS NOT NULL
 GO
 CREATE PROCEDURE NJRE.migrar_usuario AS
 BEGIN
-   INSERT INTO NJRE.usuario (usuario_nombre, usuario_pass, usuario_fecha_creacion, usuario_mail)
-   SELECT DISTINCT cli_usuario_nombre, cli_usuario_pass, cli_usuario_fecha_creacion, cliente_mail
-   FROM gd_esquema.Maestra 
-   WHERE cli_usuario_nombre IS NOT NULL 
-   UNION
-   SELECT DISTINCT ven_usuario_nombre, ven_usuario_pass, ven_usuario_fecha_creacion, vendedor_mail
-   FROM gd_esquema.Maestra 
-   WHERE ven_usuario_nombre IS NOT NULL 
+    INSERT INTO NJRE.usuario (usuario_nombre, usuario_pass, usuario_fecha_creacion, usuario_mail)
+    SELECT DISTINCT cli_usuario_nombre, cli_usuario_pass, cli_usuario_fecha_creacion, cliente_mail
+    FROM gd_esquema.Maestra 
+    WHERE cli_usuario_nombre IS NOT NULL 
+    UNION
+    SELECT DISTINCT ven_usuario_nombre, ven_usuario_pass, ven_usuario_fecha_creacion, vendedor_mail
+    FROM gd_esquema.Maestra 
+    WHERE ven_usuario_nombre IS NOT NULL
+END
+GO
+
+-- REVISAR: No estoy para nada seguro de esto
+IF Object_id('NJRE.migrar_usuarioDomicilio') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_usuarioDomicilio
+GO
+CREATE PROCEDURE NJRE.migrar_usuarioDomicilio AS
+BEGIN
+    INSERT INTO NJRE.usuario_domicilio (usuarioDomicilio_usuario_id, usuarioDomicilio_domicilio_id)
+    SELECT DISTINCT u.usuario_id, d.domicilio_id 
+    FROM gd_esquema.Maestra m
+        INNER JOIN NJRE.usuario u 
+            ON (u.usuario_nombre = m.cli_usuario_nombre OR u.usuario_nombre = m.ven_usuario_nombre)
+            AND (u.usuario_mail = m.cliente_mail OR u.usuario_mail = m.vendedor_mail)
+        INNER JOIN NJRE.domicilio d 
+            ON (d.domicilio_calle = m.cli_usuario_domicilio_calle OR d.domicilio_calle = m.ven_usuario_domicilio_calle)
+            AND (d.domicilio_nro_calle = m.cli_usuario_domicilio_nro_calle OR d.domicilio_nro_calle = m.ven_usuario_domicilio_nro_calle)
+            AND (d.domicilio_piso = m.cli_usuario_domicilio_piso OR d.domicilio_piso = m.ven_usuario_domicilio_piso)
+            AND (d.domicilio_depto = m.cli_usuario_domicilio_depto OR d.domicilio_depto = m.ven_usuario_domicilio_depto)
+            AND (d.domicilio_cp = m.cli_usuario_domicilio_cp OR d.domicilio_cp = m.ven_usuario_domicilio_cp)
+    WHERE (m.cli_usuario_nombre IS NOT NULL OR m.ven_usuario_nombre IS NOT NULL);
 END
 GO
 
@@ -723,7 +742,7 @@ GO
 
 
 -------------------------------------------------------------------------------------------------
--- EJECUCION DE MIGRACION DE DATOS
+-- EJECUCION DE LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
 -- Probablemente el orden haya que revisar el orden de ejecucion
@@ -740,6 +759,7 @@ EXEC NJRE.migrar_almacen;
 EXEC NJRE.migrar_tipoEnvio;
 EXEC NJRE.migrar_concepto;
 EXEC NJRE.migrar_usuario;
+EXEC NJRE.migrar_usuarioDomicilio;
 EXEC NJRE.migrar_producto;
 EXEC NJRE.migrar_publicacion;
 EXEC NJRE.migrar_envio;
