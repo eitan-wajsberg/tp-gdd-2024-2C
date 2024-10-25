@@ -91,12 +91,13 @@ GO
 
 
 -------------------------------------------------------------------------------------------------
--- ELIMINACION DE TABLAS, FKS Y PROCEDURES - Las FKs tambien las deberiamos eliminar, no?
+-- ELIMINACION DE TABLAS, FKS Y PROCEDURES - 
 -------------------------------------------------------------------------------------------------
 
 EXEC NJRE.borrar_fks;
 EXEC NJRE.borrar_tablas;
 EXEC NJRE.borrar_procedimientos;
+-- REVISAR: Las FKs tambien las deberiamos eliminar, no? o se eliminan en conjunto con las tablas?
 
 GO
 
@@ -916,7 +917,8 @@ GO
 -- EJECUCION DE LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
--- Probablemente el orden haya que revisar el orden de ejecucion
+-- REVISAR: Probablemente el orden de ejecucion no sea correcto
+-- PROPUESTA: Tambien podriamos hacer un procedure que ejecute todos los procedures de migracion.
 EXEC NJRE.migrar_tipoMedioPago;
 EXEC NJRE.migrar_medioPago;
 EXEC NJRE.migrar_provincia;
