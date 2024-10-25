@@ -780,6 +780,25 @@ BEGIN
 END
 GO
 
+IF Object_id('NJRE.migrar_venta') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_venta
+GO
+CREATE PROCEDURE NJRE.migrar_venta AS
+BEGIN
+    INSERT INTO NJRE.venta (venta_id, venta_cliente_id, venta_fecha, venta_total)
+    SELECT DISTINCT VENTA_CODIGO, c.cliente_id, VENTA_FECHA, VENTA_TOTAL
+    FROM gd_esquema.Maestra m 
+        INNER JOIN NJRE.usuario u ON CLI_USUARIO_NOMBRE = usuario_nombre -- filtro al por el cliente por el user id, para evitar colisiones, REVISAR
+            AND CLI_USUARIO_PASS = usuario_pass 
+            AND CLI_USUARIO_FECHA_CREACION = usuario_fecha_creacion 
+            AND CLIENTE_MAIL = usuario_mail
+        INNER JOIN NJRE.cliente c ON  u.usuario_id = cliente_usuario_id
+        
+    WHERE CLI_USUARIO_NOMBRE IS NOT NULL
+END
+GO
+
+
 
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
