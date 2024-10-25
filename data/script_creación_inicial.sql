@@ -6,7 +6,7 @@ USE GD2C2024;
 GO
 IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'NJRE')
 BEGIN 
-	EXEC ('CREATE SCHEMA NJRE')
+    EXEC ('CREATE SCHEMA NJRE')
 END
 GO
 
@@ -213,15 +213,15 @@ CREATE TABLE NJRE.usuario_domicilio (
 );
 
 CREATE TABLE NJRE.pago (
-	pago_id INT IDENTITY(1, 1),
-	pago_medioPago_id INT NOT NULL,
-	pago_venta_id INT NOT NULL,
-	pago_fecha DATE NOT NULL,
-	pago_importe DECIMAL(18,2) NOT NULL
+    pago_id INT IDENTITY(1, 1),
+    pago_medioPago_id INT NOT NULL,
+    pago_venta_id INT NOT NULL,
+    pago_fecha DATE NOT NULL,
+    pago_importe DECIMAL(18,2) NOT NULL
 );
 
 CREATE TABLE NJRE.detalle_pago (
-	detallePago_id INT IDENTITY(1, 1),
+    detallePago_id INT IDENTITY(1, 1),
     detallePago_pago_id INT NOT NULL,
     detallePago_tarjeta_nro  NVARCHAR(50),
     detallePago_tarjeta_fecha_vencimiento DATE,
@@ -231,84 +231,84 @@ CREATE TABLE NJRE.detalle_pago (
 );
 
 CREATE TABLE NJRE.medio_pago (
-	medioPago_id INT IDENTITY(1, 1),
-	medioPago_tipoMedioPago_id INT NOT NULL,
-	medioPago_nombre NVARCHAR(50) NOT NULL
+    medioPago_id INT IDENTITY(1, 1),
+    medioPago_tipoMedioPago_id INT NOT NULL,
+    medioPago_nombre NVARCHAR(50) NOT NULL
 );
 
 CREATE TABLE NJRE.tipo_medio_pago (
-	tipoMedioPago_id INT IDENTITY(1, 1),
-	tipoMedioPago_nombre NVARCHAR(50) NOT NULL
+    tipoMedioPago_id INT IDENTITY(1, 1),
+    tipoMedioPago_nombre NVARCHAR(50) NOT NULL
 );
 
 CREATE TABLE NJRE.domicilio (
-	domicilio_id INT IDENTITY(1, 1),
-	domicilio_localidad INT NOT NULL,
-	domicilio_provincia NCHAR(2) NOT NULL,
-	domicilio_calle NVARCHAR(50) NOT NULL,
-	domicilio_nro_calle DECIMAL(18, 0) NOT NULL,
-	domicilio_piso DECIMAL(18, 0),
-	domicilio_depto NVARCHAR(50),
-	domicilio_cp NVARCHAR(50)
+    domicilio_id INT IDENTITY(1, 1),
+    domicilio_localidad INT NOT NULL,
+    domicilio_provincia NCHAR(2) NOT NULL,
+    domicilio_calle NVARCHAR(50) NOT NULL,
+    domicilio_nro_calle DECIMAL(18, 0) NOT NULL,
+    domicilio_piso DECIMAL(18, 0),
+    domicilio_depto NVARCHAR(50),
+    domicilio_cp NVARCHAR(50)
 );
 
 CREATE TABLE NJRE.localidad (
-	localidad_id INT IDENTITY(1, 1),
-	localidad_nombre NVARCHAR(50) NOT NULL
+    localidad_id INT IDENTITY(1, 1),
+    localidad_nombre NVARCHAR(50) NOT NULL
 );
 
 CREATE TABLE NJRE.provincia (
-	provincia_id NCHAR(2) NOT NULL,
-	provincia_nombre NVARCHAR(50) NOT NULL
+    provincia_id NCHAR(2) NOT NULL,
+    provincia_nombre NVARCHAR(50) NOT NULL
 );
 
 CREATE TABLE NJRE.envio (
-	envio_id INT IDENTITY(1, 1) NOT NULL ,
-	envio_venta_id DECIMAL(18,0) NOT NULL,
-	envio_domicilio_id INT NOT NULL,
-	envio_tipoEnvio_id INT NOT NULL,
-	envio_fecha_programada DATE NOT NULL,
-	envio_hora_inicio DECIMAL(18,0),
-	envio_hora_fin DECIMAL(18,0),
-	envio_costo DECIMAL(18,2) NOT NULL,
-	envio_fecha_entrega DATETIME,
-	envio_estado NVARCHAR(20) NOT NULL, 
-	CONSTRAINT CHK_EnvioEstado CHECK (envio_estado IN ('En preparación', 'En camino', 'Entregado'))
+    envio_id INT IDENTITY(1, 1) NOT NULL ,
+    envio_venta_id DECIMAL(18,0) NOT NULL,
+    envio_domicilio_id INT NOT NULL,
+    envio_tipoEnvio_id INT NOT NULL,
+    envio_fecha_programada DATE NOT NULL,
+    envio_hora_inicio DECIMAL(18,0),
+    envio_hora_fin DECIMAL(18,0),
+    envio_costo DECIMAL(18,2) NOT NULL,
+    envio_fecha_entrega DATETIME,
+    envio_estado NVARCHAR(20) NOT NULL, 
+    CONSTRAINT CHK_EnvioEstado CHECK (envio_estado IN ('En preparación', 'En camino', 'Entregado'))
 );
 
 CREATE TABLE NJRE.tipo_envio (
-	tipoEnvio_id INT IDENTITY(1, 1) NOT NULL,
-	tipoEnvio_medio NVARCHAR(50) NOT NULL,
+    tipoEnvio_id INT IDENTITY(1, 1) NOT NULL,
+    tipoEnvio_medio NVARCHAR(50) NOT NULL,
 );
 
 CREATE TABLE NJRE.historial_estado_envio (
-	historialEstadoEnvio_id INT IDENTITY(1, 1) NOT NULL,
-	historialEstadoEnvio_envio_id INT NOT NULL,
-	historialEstadoEnvio_fecha DATE NOT NULL,
-	historialEstadoEnvio_estado NVARCHAR(20) NOT NULL,
-	CONSTRAINT CHK_HistorialEstadoEnvioEstado CHECK (historialEstadoEnvio_estado IN ('En preparación', 'En camino', 'Entregado'))
+    historialEstadoEnvio_id INT IDENTITY(1, 1) NOT NULL,
+    historialEstadoEnvio_envio_id INT NOT NULL,
+    historialEstadoEnvio_fecha DATE NOT NULL,
+    historialEstadoEnvio_estado NVARCHAR(20) NOT NULL,
+    CONSTRAINT CHK_HistorialEstadoEnvioEstado CHECK (historialEstadoEnvio_estado IN ('En preparación', 'En camino', 'Entregado'))
 );
 
 CREATE TABLE NJRE.factura (
-	factura_id DECIMAL(18,0) NOT NULL, -- Posee un número en la tabla maestra
-	factura_usuario INT NOT NULL,
-	factura_fecha DATE NOT NULL,
-	factura_total DECIMAL(18,2) NOT NULL,
+    factura_id DECIMAL(18,0) NOT NULL, -- Posee un número en la tabla maestra
+    factura_usuario INT NOT NULL,
+    factura_fecha DATE NOT NULL,
+    factura_total DECIMAL(18,2) NOT NULL,
 );
 
 CREATE TABLE NJRE.factura_detalle (
-	facturaDetalle_id INT IDENTITY(1, 1) NOT NULL,
-	facturaDetalle_factura_id DECIMAL(18,0) NOT NULL,
-	facturaDetalle_publicacion INT NOT NULL,
-	facturaDetalle_concepto_id INT NOT NULL,
-	facturaDetalle_precio_unitario DECIMAL(18,2) NOT NULL,
-	facturaDetalle_cantidad DECIMAL(18,0) NOT NULL,
-	facturaDetalle_subtotal DECIMAL(18,2) NOT NULL,
+    facturaDetalle_id INT IDENTITY(1, 1) NOT NULL,
+    facturaDetalle_factura_id DECIMAL(18,0) NOT NULL,
+    facturaDetalle_publicacion INT NOT NULL,
+    facturaDetalle_concepto_id INT NOT NULL,
+    facturaDetalle_precio_unitario DECIMAL(18,2) NOT NULL,
+    facturaDetalle_cantidad DECIMAL(18,0) NOT NULL,
+    facturaDetalle_subtotal DECIMAL(18,2) NOT NULL,
 );
 
 CREATE TABLE NJRE.concepto (
-	concepto_id INT IDENTITY(1, 1) NOT NULL,
-	concepto_nombre NVARCHAR(50) NOT NULL,
+    concepto_id INT IDENTITY(1, 1) NOT NULL,
+    concepto_nombre NVARCHAR(50) NOT NULL,
 );
 
 
@@ -622,10 +622,10 @@ GO
 CREATE PROCEDURE NJRE.migrar_subrubro AS
 BEGIN
     INSERT INTO NJRE.subrubro (subrubro_rubro_id, subrubro_descripcion)
-        SELECT DISTINCT n.rubro_id, producto_sub_rubro
-        FROM gd_esquema.Maestra m
-        JOIN NJRE.rubro n on n.rubro_descripcion = m.producto_rubro_descripcion
-        WHERE producto_sub_rubro IS NOT NULL
+    SELECT DISTINCT n.rubro_id, producto_sub_rubro
+    FROM gd_esquema.Maestra m
+    JOIN NJRE.rubro n on n.rubro_descripcion = m.producto_rubro_descripcion
+    WHERE producto_sub_rubro IS NOT NULL
 END
 GO
 
@@ -742,10 +742,10 @@ BEGIN
     INSERT INTO NJRE.producto (producto_marca_id, producto_mod_id, producto_subrubro_id, producto_codigo, producto_precio, producto_fecha_alta)
     SELECT marca_id, producto_mod_codigo, subrubro_id, producto_codigo, producto_precio, MIN(publicacion_fecha)
     FROM gd_esquema.Maestra 
-    INNER JOIN NJRE.marca on marca_descripcion = producto_marca
-    INNER JOIN NJRE.subrubro on subrubro_descripcion = producto_sub_rubro and subrubro_rubro_id = producto_mod_codigo
+    INNER JOIN NJRE.marca ON marca_descripcion = producto_marca
+    INNER JOIN NJRE.subrubro ON subrubro_descripcion = producto_sub_rubro AND subrubro_rubro_id = producto_mod_codigo
     WHERE producto_codigo IS NOT NULL
-    group by producto_marca, producto_mod_codigo, producto_sub_rubro, producto_codigo, producto_precio
+    GROUP BY producto_marca, producto_mod_codigo, producto_sub_rubro, producto_codigo, producto_precio
 END
 GO
 
@@ -761,13 +761,12 @@ BEGIN
 		PUBLICACION_DESCRIPCION, PUBLICACION_FECHA, PUBLICACION_FECHA_V, PUBLICACION_STOCK, PUBLICACION_PRECIO,
 		PUBLICACION_COSTO, PUBLICACION_PORC_VENTA
     FROM gd_esquema.Maestra m
-        INNER JOIN NJRE.subrubro ON subrubro_descripcion = producto_sub_rubro and subrubro_rubro_id = producto_mod_codigo
+        INNER JOIN NJRE.subrubro ON subrubro_descripcion = producto_sub_rubro AND subrubro_rubro_id = producto_mod_codigo
         INNER JOIN NJRE.marca ON marca_descripcion = producto_marca
-        INNER JOIN NJRE.producto ON producto_marca_id = marca_id and producto_subrubro_id = subrubro_id
+        INNER JOIN NJRE.producto ON producto_marca_id = marca_id AND producto_subrubro_id = subrubro_id
         INNER JOIN NJRE.vendedor n ON n.vendedor_razon_social = m.vendedor_razon_social
         INNER JOIN NJRE.almacen ON almacen_id = almacen_codigo
-    WHERE publicacion_codigo is not null
-		and m.PRODUCTO_CODIGO is not null
+    WHERE publicacion_codigo IS NOT NULL AND m.PRODUCTO_CODIGO IS NOT NULL
 END
 GO
 
@@ -906,7 +905,7 @@ BEGIN
         m.FACTURA_DET_SUBTOTAL
     FROM gd_esquema.Maestra m
         INNER JOIN NJRE.factura f ON f.factura_id = m.FACTURA_NUMERO 
-        LEFT JOIN NJRE.publicacion p ON p.publicacion_id = m.PUBLICACION_CODIGO 
+        LEFT JOIN NJRE.publicacion p ON p.publicacion_id = m.PUBLICACION_CODIGO
         LEFT JOIN NJRE.concepto c ON c.concepto_nombre = m.FACTURA_DET_TIPO 
     WHERE m.FACTURA_NUMERO IS NOT NULL
 END
