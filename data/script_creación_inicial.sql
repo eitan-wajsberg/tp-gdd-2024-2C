@@ -12,17 +12,93 @@ GO
 
 
 -------------------------------------------------------------------------------------------------
--- PROCEDURES AUXILIARES PARA LA DEFINICION DE DATOS
+-- PROCEDURES AUXILIARES
 -------------------------------------------------------------------------------------------------
 
--- TODO: Deberiamos agregar uno o varios procedures que eliminen todas las PKs, FKs y Tablas para
---       que al volver a correr el script no haya problemas. En varios de los repositorios que 
---       envio rocio hacen eso.
+IF Object_id('NJRE.borrar_fks') IS NOT NULL 
+    DROP PROCEDURE NJRE.borrar_fks 
+GO 
+CREATE PROCEDURE NJRE.borrar_fks AS
+BEGIN
+    DECLARE @query nvarchar(255) 
+    DECLARE query_cursor CURSOR FOR 
+    SELECT 'ALTER TABLE ' 
+        + object_schema_name(k.parent_object_id) 
+        + '.[' + Object_name(k.parent_object_id) 
+        + '] DROP CONSTRAINT ' + k.NAME query 
+    FROM   sys.foreign_keys k
 
--- EXEC NJRE.borrar_fks;
--- EXEC NJRE.borrar_tablas;
--- EXEC NJRE.borrar_procedimientos;
--- GO
+    OPEN query_cursor 
+    FETCH NEXT FROM query_cursor INTO @query 
+    WHILE @@FETCH_STATUS = 0 
+    BEGIN 
+        EXEC sp_executesql @query 
+        FETCH NEXT FROM query_cursor INTO @query 
+    END
+
+    CLOSE query_cursor 
+    DEALLOCATE query_cursor 
+END
+GO 
+
+IF Object_id('NJRE.borrar_tablas') IS NOT NULL 
+  DROP PROCEDURE NJRE.borrar_tablas
+GO 
+CREATE PROCEDURE NJRE.borrar_tablas AS
+BEGIN
+    DECLARE @query nvarchar(255) 
+    DECLARE query_cursor CURSOR FOR  
+        SELECT 'DROP TABLE NJRE.' + name
+        FROM  sys.tables 
+        WHERE schema_id = (SELECT schema_id FROM sys.schemas WHERE name = 'NJRE')
+    
+    OPEN query_cursor 
+    FETCH NEXT FROM query_cursor INTO @query 
+    WHILE @@FETCH_STATUS = 0 
+    BEGIN 
+        EXEC sp_executesql @query 
+        FETCH NEXT FROM query_cursor INTO @query 
+    END 
+
+    CLOSE query_cursor 
+    DEALLOCATE query_cursor
+END
+GO 
+
+IF Object_id('NJRE.borrar_procedimientos') IS NOT NULL 
+    DROP PROCEDURE NJRE.borrar_procedimientos
+GO 
+CREATE PROCEDURE NJRE.borrar_procedimientos AS
+BEGIN
+    DECLARE @query nvarchar(255) 
+    DECLARE query_cursor CURSOR FOR  
+        SELECT 'DROP PROCEDURE NJRE.' + name
+        FROM  sys.procedures 
+        WHERE schema_id = (SELECT schema_id FROM sys.schemas WHERE name = 'NJRE') AND name LIKE 'migrar_%'
+    
+    OPEN query_cursor 
+    FETCH NEXT FROM query_cursor INTO @query 
+    WHILE @@FETCH_STATUS = 0 
+    BEGIN 
+        EXEC sp_executesql @query 
+        FETCH NEXT FROM query_cursor INTO @query 
+    END 
+
+    CLOSE query_cursor 
+    DEALLOCATE query_cursor 
+END
+GO 
+
+
+-------------------------------------------------------------------------------------------------
+-- ELIMINACION DE TABLAS, FKS Y PROCEDURES - Las FKs tambien las deberiamos eliminar, no?
+-------------------------------------------------------------------------------------------------
+
+EXEC NJRE.borrar_fks;
+EXEC NJRE.borrar_tablas;
+EXEC NJRE.borrar_procedimientos;
+
+GO
 
 
 -------------------------------------------------------------------------------------------------
@@ -740,15 +816,9 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_pago') IS NOT NULL 
-    DROP PROCEDURE NJRE.migrar_pago
-GO
-
 IF OBJECT_ID('NJRE.migrar_pago') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_pago
 GO
-
-
 CREATE PROCEDURE NJRE.migrar_pago AS
 BEGIN
     -- Defino un CTE(Una tabla Común) para no repetir subQuery 
@@ -762,7 +832,7 @@ BEGIN
             m.PAGO_FECHA_VENC_TARJETA AS TMP_FECHA_VENC_TARJETA, 
             m.PAGO_CANT_CUOTAS AS TMP_CANT_CUOTAS
         FROM gd_esquema.Maestra m
-        INNER JOIN NJRE.medio_pago mp ON mp.medio_pago = m.PAGO_TIPO_MEDIO_PAGO
+        INNER JOIN NJRE.medio_pago mp ON mp.medioPago_nombre = m.PAGO_TIPO_MEDIO_PAGO
         WHERE m.VENTA_CODIGO IS NOT NULL
     )
 
@@ -772,7 +842,7 @@ BEGIN
     FROM CTE_Pago;
 
     -- Inserto en el detallePago la CTE
-    INSERT INTO NJRE.detallePago (detallePago_pago_id, detallePago_tarjeta_nro, detallePago_tarjeta_fecha_vencimiento, 
+    INSERT INTO NJRE.detalle_pago (detallePago_pago_id, detallePago_tarjeta_nro, detallePago_tarjeta_fecha_vencimiento, 
         detallePago_cant_cuotas, detallePago_importe_parcial)
     SELECT p.pago_id, c.TMP_TARJETA_NRO, c.TMP_FECHA_VENC_TARJETA, c.TMP_CANT_CUOTAS, c.TMP_PAGO_IMPORTE
     FROM CTE_Pago c
@@ -797,7 +867,10 @@ BEGIN
     WHERE CLI_USUARIO_NOMBRE IS NOT NULL
 END
 GO
-	
+
+IF Object_id('NJRE.migrar_factura') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_factura
+GO
 CREATE PROCEDURE NJRE.migrar_factura AS
 BEGIN
     INSERT INTO NJRE.factura (factura_id, factura_usuario, factura_fecha, factura_total)
@@ -812,6 +885,9 @@ BEGIN
 END
 GO
 
+IF Object_id('NJRE.migrar_factura_detalle') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_factura_detalle
+GO
 CREATE PROCEDURE NJRE.migrar_factura_detalle AS
 BEGIN
     INSERT INTO NJRE.factura_detalle (
@@ -830,12 +906,11 @@ BEGIN
         m.FACTURA_DET_SUBTOTAL
     FROM gd_esquema.Maestra m
         INNER JOIN NJRE.factura f ON f.factura_id = m.FACTURA_NUMERO 
-        LEFT JOIN NJRE.publicacion p ON p.publicacion_codigo = m.PUBLICACION_CODIGO 
+        LEFT JOIN NJRE.publicacion p ON p.publicacion_id = m.PUBLICACION_CODIGO 
         LEFT JOIN NJRE.concepto c ON c.concepto_nombre = m.FACTURA_DET_TIPO 
     WHERE m.FACTURA_NUMERO IS NOT NULL
 END
 GO
-
 
 
 -------------------------------------------------------------------------------------------------
@@ -851,7 +926,7 @@ EXEC NJRE.migrar_domicilio;
 EXEC NJRE.migrar_rubro;
 EXEC NJRE.migrar_subrubro;
 EXEC NJRE.migrar_marca;
-EXEC NJRE.migrar_modeloa;
+EXEC NJRE.migrar_modelo;
 EXEC NJRE.migrar_almacen;
 EXEC NJRE.migrar_tipoEnvio;
 EXEC NJRE.migrar_concepto;
