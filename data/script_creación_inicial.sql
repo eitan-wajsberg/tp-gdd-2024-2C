@@ -766,10 +766,17 @@ BEGIN
         WHERE m.VENTA_CODIGO IS NOT NULL
     )
 
+    -- Inserto en el pago la CTE
     INSERT INTO NJRE.pago (pago_medioPago_id, pago_venta_id, pago_fecha, pago_importe)
     SELECT TMP_MEDIO_PAGO_ID, TMP_VENTA_CODIGO, TMP_PAGO_FECHA, TMP_PAGO_IMPORTE
     FROM CTE_Pago;
 
+    -- Inserto en el detallePago la CTE
+    INSERT INTO NJRE.detallePago (detallePago_pago_id, detallePago_tarjeta_nro, detallePago_tarjeta_fecha_vencimiento, 
+        detallePago_cant_cuotas, detallePago_importe_parcial)
+    SELECT p.pago_id, c.TMP_TARJETA_NRO, c.TMP_FECHA_VENC_TARJETA, c.TMP_CANT_CUOTAS, c.TMP_PAGO_IMPORTE
+    FROM CTE_Pago c
+    INNER JOIN NJRE.pago p ON p.pago_venta_id = c.TMP_VENTA_CODIGO;
 END
 GO
 
