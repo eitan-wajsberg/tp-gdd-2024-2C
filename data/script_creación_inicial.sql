@@ -797,6 +797,44 @@ BEGIN
     WHERE CLI_USUARIO_NOMBRE IS NOT NULL
 END
 GO
+	
+CREATE PROCEDURE NJRE.migrar_factura AS
+BEGIN
+    INSERT INTO NJRE.factura (factura_id, factura_usuario, factura_fecha, factura_total)
+    SELECT DISTINCT FACTURA_NUMERO, v.vendedor_id, FACTURA_FECHA, FACTURA_TOTAL
+    FROM gd_esquema.Maestra m 
+        INNER JOIN NJRE.usuario u ON VEN_USUARIO_NOMBRE = usuario_nombre
+            AND VEN_USUARIO_PASS = usuario_pass 
+            AND VEN_USUARIO_FECHA_CREACION = usuario_fecha_creacion 
+            AND VENDEDOR_MAIL = usuario_mail
+        INNER JOIN NJRE.vendedor v ON  u.usuario_id = vendedor_id
+    WHERE m.VEN_USUARIO_NOMBRE IS NOT NULL
+END
+GO
+
+CREATE PROCEDURE NJRE.migrar_factura_detalle AS
+BEGIN
+    INSERT INTO NJRE.factura_detalle (
+        facturaDetalle_factura_id, 
+        facturaDetalle_publicacion, 
+        facturaDetalle_concepto_id, 
+        facturaDetalle_precio_unitario, 
+        facturaDetalle_cantidad, 
+        facturaDetalle_subtotal)
+    SELECT DISTINCT 
+        f.factura_id, 
+        p.publicacion_id, 
+        c.concepto_id, 
+        m.FACTURA_DET_PRECIO, 
+        m.FACTURA_DET_CANTIDAD, 
+        m.FACTURA_DET_SUBTOTAL
+    FROM gd_esquema.Maestra m
+        INNER JOIN NJRE.factura f ON f.factura_id = m.FACTURA_NUMERO 
+        LEFT JOIN NJRE.publicacion p ON p.publicacion_codigo = m.PUBLICACION_CODIGO 
+        LEFT JOIN NJRE.concepto c ON c.concepto_nombre = m.FACTURA_DET_TIPO 
+    WHERE m.FACTURA_NUMERO IS NOT NULL
+END
+GO
 
 
 
@@ -825,7 +863,8 @@ EXEC NJRE.migrar_envio;
 EXEC NJRE.migrar_vendedor;
 EXEC NJRE.migrar_cliente;
 EXEC NJRE.migrar_pago;
-
+EXEC NJRE.migrar_factura;
+EXEC NJRE.migrar_factura_detalle;
 
 GO
 
