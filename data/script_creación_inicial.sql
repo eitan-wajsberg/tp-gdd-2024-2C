@@ -70,7 +70,6 @@ CREATE TABLE NJRE.vendedor (
     vendedor_cuit NVARCHAR(50) NOT NULL
 );
 
-
 CREATE TABLE NJRE.almacen (
     almacen_id DECIMAL(18, 0), -- Posee un código en la tabla maestra
     almacen_docimilio_id INT NOT NULL,
@@ -78,14 +77,12 @@ CREATE TABLE NJRE.almacen (
     almacen_costo_dia DECIMAL(18, 2) NOT NULL
 );
 
-
 CREATE TABLE NJRE.historial_costo_almacen (
     historialCostoAlmacen_id INT IDENTITY(1,1), 
     historialCostoAlmacen_almacen_id INT NOT NULL,
     historialCostoAlmacen_fecha DATE NULL,
     historialCostoAlmacen_costo_dia DECIMAL(18, 2) NOT NULL
-    );
-
+);
 
 CREATE TABLE NJRE.venta (
     venta_id DECIMAL(18, 0), 
@@ -93,7 +90,6 @@ CREATE TABLE NJRE.venta (
     venta_fecha DATETIME NOT NULL,
     venta_total DECIMAL(10, 2) NOT NULL
 );
-
 
 CREATE TABLE NJRE.detalle_venta (
     detalleVenta_id INT IDENTITY(1,1), 
@@ -103,7 +99,6 @@ CREATE TABLE NJRE.detalle_venta (
     detalleVenta_cantidad DECIMAL(18, 0) NOT NULL,
     detalleVenta_subtotal DECIMAL(18, 2) NOT NULL
 );
-
 
 CREATE TABLE NJRE.cliente (
     cliente_id INT IDENTITY(1,1), 
@@ -115,7 +110,7 @@ CREATE TABLE NJRE.cliente (
 );
 
 CREATE TABLE NJRE.usuario (
-    usuario_id INT PRIMARY KEY IDENTITY(1,1),
+    usuario_id INT IDENTITY(1,1),
     usuario_nombre NVARCHAR(50) NOT NULL,
     usuario_pass NVARCHAR(50) NOT NULL,
     usuario_fecha_creacion DATE NOT NULL,
@@ -127,7 +122,7 @@ CREATE TABLE NJRE.usuario_domicilio (
     usuarioDomicilio_domicilio_id INT NOT NULL,
 );
 
-CREATE TABLE NJRE.pago(
+CREATE TABLE NJRE.pago (
 	pago_id INT IDENTITY(1, 1),
 	pago_medioPago_id INT NOT NULL,
 	pago_venta_id INT NOT NULL,
@@ -135,7 +130,7 @@ CREATE TABLE NJRE.pago(
 	pago_importe DECIMAL(18,2) NOT NULL
 );
 
-CREATE TABLE NJRE.detalle_pago(
+CREATE TABLE NJRE.detalle_pago (
 	detallePago_id INT IDENTITY(1, 1),
     detallePago_pago_id INT NOT NULL,
     detallePago_tarjeta_nro  NVARCHAR(50),
@@ -145,18 +140,18 @@ CREATE TABLE NJRE.detalle_pago(
     detallePago_importe_parcial DECIMAL(18, 2) NOT NULL
 );
 
-CREATE TABLE NJRE.medio_pago(
+CREATE TABLE NJRE.medio_pago (
 	medioPago_id INT IDENTITY(1, 1),
 	medioPago_tipoMedioPago_id INT NOT NULL,
 	medioPago_nombre NVARCHAR(50) NOT NULL
 );
 
-CREATE TABLE NJRE.tipo_medio_pago(
+CREATE TABLE NJRE.tipo_medio_pago (
 	tipoMedioPago_id INT IDENTITY(1, 1),
 	tipoMedioPago_nombre NVARCHAR(50) NOT NULL
 );
 
-CREATE TABLE NJRE.domicilio(
+CREATE TABLE NJRE.domicilio (
 	domicilio_id INT IDENTITY(1, 1),
 	domicilio_localidad INT NOT NULL,
 	domicilio_provincia NCHAR(2) NOT NULL,
@@ -167,58 +162,63 @@ CREATE TABLE NJRE.domicilio(
 	domicilio_cp NVARCHAR(50)
 );
 
-CREATE TABLE NJRE.localidad(
+CREATE TABLE NJRE.localidad (
 	localidad_id INT IDENTITY(1, 1),
 	localidad_nombre NVARCHAR(50) NOT NULL
 );
 
-CREATE TABLE NJRE.provincia(
+CREATE TABLE NJRE.provincia (
 	provincia_id NCHAR(2) NOT NULL,
 	provincia_nombre NVARCHAR(50) NOT NULL
 );
---J
-CREATE TABLE NJRE.envio(
-	envio_id int IDENTITY(1, 1) NOT NULL ,
-	envio_venta_id decimal(18,0) NOT NULL,
-	envio_domicilio_id int NOT NULL,
-	envio_tipoEnvio_id int NOT NULL,
-	envio_fecha_programada date NOT NULL,
-	envio_hora_inicio decimal(18,0),
-	envio_hora_fin decimal(18,0),
-	envio_costo decimal(18,2) NOT NULL,
+
+CREATE TABLE NJRE.envio (
+	envio_id INT IDENTITY(1, 1) NOT NULL ,
+	envio_venta_id DECIMAL(18,0) NOT NULL,
+	envio_domicilio_id INT NOT NULL,
+	envio_tipoEnvio_id INT NOT NULL,
+	envio_fecha_programada DATE NOT NULL,
+	envio_hora_inicio DECIMAL(18,0),
+	envio_hora_fin DECIMAL(18,0),
+	envio_costo DECIMAL(18,2) NOT NULL,
 	envio_fecha_entrega DATETIME,
-	envio_estado nvarchar(20) NOT NULL, 
+	envio_estado NVARCHAR(20) NOT NULL, 
 	CONSTRAINT CHK_EnvioEstado CHECK (envio_estado IN ('En preparación', 'En camino', 'Entregado'))
 );
-CREATE TABLE NJRE.tipo_envio(
-	tipoEnvio_id int IDENTITY(1, 1) NOT NULL,
-	tipoEnvio_medio nvarchar(50) NOT NULL,
+
+CREATE TABLE NJRE.tipo_envio (
+	tipoEnvio_id INT IDENTITY(1, 1) NOT NULL,
+	tipoEnvio_medio NVARCHAR(50) NOT NULL,
 );
-CREATE TABLE NJRE.historial_estado_envio(
-	historialEstadoEnvio_id int IDENTITY(1, 1) NOT NULL,
+
+CREATE TABLE NJRE.historial_estado_envio (
+	historialEstadoEnvio_id INT IDENTITY(1, 1) NOT NULL,
 	historialEstadoEnvio_envio_id INT NOT NULL,
 	historialEstadoEnvio_fecha DATE NOT NULL,
-	historialEstadoEnvio_estado nvarchar(20) NOT NULL,
+	historialEstadoEnvio_estado NVARCHAR(20) NOT NULL,
 	CONSTRAINT CHK_HistorialEstadoEnvioEstado CHECK (historialEstadoEnvio_estado IN ('En preparación', 'En camino', 'Entregado'))
 );
-CREATE TABLE NJRE.factura(
-	factura_id decimal(18,0) IDENTITY(1, 1) NOT NULL,
+
+CREATE TABLE NJRE.factura (
+	factura_id DECIMAL(18,0) NOT NULL, -- Posee un número en la tabla maestra
 	factura_usuario INT NOT NULL,
 	factura_fecha DATE NOT NULL,
-	factura_total decimal(18,2) NOT NULL,
+	factura_total DECIMAL(18,2) NOT NULL,
 );
-CREATE TABLE NJRE.factura_detalle(
+
+CREATE TABLE NJRE.factura_detalle (
 	facturaDetalle_id INT IDENTITY(1, 1) NOT NULL,
-	facturaDetalle_factura_id decimal(18,0) NOT NULL,
+	facturaDetalle_factura_id DECIMAL(18,0) NOT NULL,
 	facturaDetalle_publicacion INT NOT NULL,
 	facturaDetalle_concepto_id INT NOT NULL,
-	facturaDetalle_precio_unitario decimal(18,2) NOT NULL,
-	facturaDetalle_cantidad decimal(18,0) NOT NULL,
-	facturaDetalle_subtotal decimal(18,2) NOT NULL,
+	facturaDetalle_precio_unitario DECIMAL(18,2) NOT NULL,
+	facturaDetalle_cantidad DECIMAL(18,0) NOT NULL,
+	facturaDetalle_subtotal DECIMAL(18,2) NOT NULL,
 );
-CREATE TABLE NJRE.concepto(
-	concepto_id int IDENTITY(1, 1) NOT NULL,
-	concepto_nombre nvarchar(50) NOT NULL,
+
+CREATE TABLE NJRE.concepto (
+	concepto_id INT IDENTITY(1, 1) NOT NULL,
+	concepto_nombre NVARCHAR(50) NOT NULL,
 );
 
 
@@ -303,6 +303,9 @@ ADD CONSTRAINT PK_DetalleVenta PRIMARY KEY (detalleVenta_id);
 
 ALTER TABLE NJRE.cliente
 ADD CONSTRAINT PK_Cliente PRIMARY KEY (cliente_id);
+
+ALTER TABLE NJRE.usuario
+ADD CONSTRAINT PK_Usuario PRIMARY KEY (usuario_id);
 
 
 -------------------------------------------------------------------------------------------------
@@ -389,7 +392,7 @@ GO
 
 
 -------------------------------------------------------------------------------------------------
--- FUNCIONES PARA LA MMIGRACION DE DATOS
+-- FUNCIONES PARA LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
 /*
