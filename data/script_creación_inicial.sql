@@ -10,9 +10,20 @@ BEGIN
 END
 GO
 
--- TODO: Deberiamos agregar una funcion o procedure que elimine todas las PKs, FKs y Tablas para
+
+-------------------------------------------------------------------------------------------------
+-- PROCEDURES AUXILIARES PARA LA DEFINICION DE DATOS
+-------------------------------------------------------------------------------------------------
+
+-- TODO: Deberiamos agregar uno o varios procedures que eliminen todas las PKs, FKs y Tablas para
 --       que al volver a correr el script no haya problemas. En varios de los repositorios que 
 --       envio rocio hacen eso.
+
+-- EXEC NJRE.borrar_fks;
+-- EXEC NJRE.borrar_tablas;
+-- EXEC NJRE.borrar_procedimientos;
+-- GO
+
 
 -------------------------------------------------------------------------------------------------
 -- CREACION DE TABLAS
@@ -709,3 +720,37 @@ BEGIN
     WHERE CLI_USUARIO_NOMBRE IS NOT NULL
 END
 GO
+
+
+-------------------------------------------------------------------------------------------------
+-- EJECUCION DE MIGRACION DE DATOS
+-------------------------------------------------------------------------------------------------
+
+-- Probablemente el orden haya que revisar el orden de ejecucion
+EXEC NJRE.migrar_tipoMedioPago;
+EXEC NJRE.migrar_medioPago;
+EXEC NJRE.migrar_provincia;
+EXEC NJRE.migrar_localidad;
+EXEC NJRE.migrar_domicilio;
+EXEC NJRE.migrar_rubro;
+EXEC NJRE.migrar_subrubro;
+EXEC NJRE.migrar_marca;
+EXEC NJRE.migrar_modeloa;
+EXEC NJRE.migrar_almacen;
+EXEC NJRE.migrar_tipoEnvio;
+EXEC NJRE.migrar_concepto;
+EXEC NJRE.migrar_usuario;
+EXEC NJRE.migrar_producto;
+EXEC NJRE.migrar_publicacion;
+EXEC NJRE.migrar_envio;
+EXEC NJRE.migrar_vendedor;
+EXEC NJRE.migrar_cliente;
+
+GO
+
+-------------------------------------------------------------------------------------------------
+-- ELIMINACION DE PROCEDURES ?
+-------------------------------------------------------------------------------------------------
+
+-- EXEC NJRE.eliminar_procedures;
+-- GO
