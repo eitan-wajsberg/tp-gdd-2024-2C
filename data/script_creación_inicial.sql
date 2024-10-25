@@ -1,3 +1,7 @@
+-------------------------------------------------------------------------------------------------
+-- CREACION DE ESQUEMA
+-------------------------------------------------------------------------------------------------
+
 USE GD2C2024;
 GO
 IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'NJRE')
@@ -5,6 +9,7 @@ BEGIN
 	EXEC ('CREATE SCHEMA NJRE')
 END
 GO
+
 
 -------------------------------------------------------------------------------------------------
 -- CREACION DE TABLAS
@@ -216,6 +221,7 @@ CREATE TABLE NJRE.concepto(
 	concepto_nombre nvarchar(50) NOT NULL,
 );
 
+
 -------------------------------------------------------------------------------------------------
 -- CREACION DE PRIMARY KEYS
 -------------------------------------------------------------------------------------------------
@@ -241,17 +247,27 @@ ADD CONSTRAINT PK_Localidad PRIMARY KEY (localidad_id)
 ALTER TABLE NJRE.provincia
 ADD CONSTRAINT PK_Provincia PRIMARY KEY (provincia_id)
 
---J
-ALTER TABLE NJRE.envio ADD CONSTRAINT PK_ENVIO PRIMARY KEY (envio_id);
-ALTER TABLE NJRE.tipo_envio ADD CONSTRAINT PK_TIPOENVIO PRIMARY KEY (tipoEnvio_id);
-ALTER TABLE NJRE.historial_estado_envio ADD CONSTRAINT PK_HISTORIAL_ESTADO_ENVIO PRIMARY KEY (historialEstadoEnvio_id);
-ALTER TABLE NJRE.factura ADD CONSTRAINT PK_FACTURA PRIMARY KEY (factura_id);
-ALTER TABLE NJRE.factura_detalle ADD CONSTRAINT PK_FACTURADETALLE PRIMARY KEY (facturaDetalle_id);
-ALTER TABLE NJRE.concepto ADD CONSTRAINT PK_CONCEPTO PRIMARY KEY (concepto_id);
+ALTER TABLE NJRE.envio 
+ADD CONSTRAINT PK_Envio PRIMARY KEY (envio_id);
 
-ALTER TABLE NJRE.usuario_domicilio ADD CONSTRAINT PK_USUARIO_DOMICILIO PRIMARY KEY (usuarioDomicilio_usuario_id, usuarioDomicilio_domicilio_id);
+ALTER TABLE NJRE.tipo_envio 
+ADD CONSTRAINT PK_TipoEnvio PRIMARY KEY (tipoEnvio_id);
 
---]
+ALTER TABLE NJRE.historial_estado_envio 
+ADD CONSTRAINT PK_HistorialEstadoEnvio PRIMARY KEY (historialEstadoEnvio_id);
+
+ALTER TABLE NJRE.factura 
+ADD CONSTRAINT PK_Factura PRIMARY KEY (factura_id);
+
+ALTER TABLE NJRE.factura_detalle 
+ADD CONSTRAINT PK_FacturaDetalle PRIMARY KEY (facturaDetalle_id);
+
+ALTER TABLE NJRE.concepto 
+ADD CONSTRAINT PK_Concepto PRIMARY KEY (concepto_id);
+
+ALTER TABLE NJRE.usuario_domicilio 
+ADD CONSTRAINT PK_UsuarioDomicilio PRIMARY KEY (usuarioDomicilio_usuario_id, usuarioDomicilio_domicilio_id);
+
 ALTER TABLE NJRE.publicacion
 ADD CONSTRAINT PK_Publicacion PRIMARY KEY (publicacion_id)
 
@@ -288,6 +304,7 @@ ADD CONSTRAINT PK_DetalleVenta PRIMARY KEY (detalleVenta_id);
 ALTER TABLE NJRE.cliente
 ADD CONSTRAINT PK_Cliente PRIMARY KEY (cliente_id);
 
+
 -------------------------------------------------------------------------------------------------
 -- CREACION DE FOREIGN KEYS
 -------------------------------------------------------------------------------------------------
@@ -298,36 +315,40 @@ ADD
 	CONSTRAINT FK_Pago_Venta FOREIGN KEY (pago_venta_id) REFERENCES NJRE.venta (venta_id)
 	
 ALTER TABLE NJRE.detalle_pago
-ADD 
-	CONSTRAINT FK_DetallePago_Pago FOREIGN KEY (detallePago_pago_id) REFERENCES NJRE.pago (pago_id)
+ADD CONSTRAINT FK_DetallePago_Pago FOREIGN KEY (detallePago_pago_id) REFERENCES NJRE.pago (pago_id)
 	
 ALTER TABLE NJRE.medio_pago
-ADD 
-	CONSTRAINT FK_MedioPago_TipoMedioPago FOREIGN KEY (medioPago_tipoMedioPago_id) REFERENCES NJRE.tipo_medio_pago (tipoMedioPago_id)
+ADD CONSTRAINT FK_MedioPago_TipoMedioPago FOREIGN KEY (medioPago_tipoMedioPago_id) REFERENCES NJRE.tipo_medio_pago (tipoMedioPago_id)
 
 ALTER TABLE NJRE.domicilio
 ADD 
 	CONSTRAINT FK_Domicilio_Localidad FOREIGN KEY (domicilio_localidad) REFERENCES NJRE.localidad (localidad_id),
 	CONSTRAINT FK_Domicilio_Provincia FOREIGN KEY (domicilio_provincia) REFERENCES NJRE.provincia (provincia_id)
 
---J
 ALTER TABLE NJRE.envio 
 ADD 
-        CONSTRAINT FK_ENVIO_TIPO_ENVIO FOREIGN KEY (envio_tipoEnvio_id) REFERENCES NJRE.tipo_envio,
-        CONSTRAINT FK_ENVIO_DOMICILIO FOREIGN KEY (envio_domicilio_id) REFERENCES NJRE.domicilio,
-        CONSTRAINT FK_ENVIO_VENTA FOREIGN KEY (envio_venta_id) REFERENCES NJRE.venta
+    CONSTRAINT FK_Envio_TipoEnvio FOREIGN KEY (envio_tipoEnvio_id) REFERENCES NJRE.tipo_envio,
+    CONSTRAINT FK_Envio_Domicilio FOREIGN KEY (envio_domicilio_id) REFERENCES NJRE.domicilio,
+    CONSTRAINT FK_Envio_Venta FOREIGN KEY (envio_venta_id) REFERENCES NJRE.venta
 
 
-ALTER TABLE NJRE.historial_estado_envio ADD CONSTRAINT FK_HISTORIAL_ENVIO FOREIGN KEY (historialEstadoEnvio_envio_id) REFERENCES NJRE.envio;
-ALTER TABLE NJRE.factura ADD CONSTRAINT FK_FACTURA_FACTURADETALLE FOREIGN KEY (factura_usuario) REFERENCES NJRE.factura_detalle;
-ALTER TABLE NJRE.factura_detalle ADD CONSTRAINT FK_FACTURADETALLE_CONCEPTO FOREIGN KEY (facturaDetalle_concepto_id) REFERENCES NJRE.concepto;
-ALTER TABLE NJRE.factura_detalle ADD CONSTRAINT FK_FACTURADETALLE_FACTURA FOREIGN KEY (facturaDetalle_factura_id) REFERENCES NJRE.factura;
-ALTER TABLE NJRE.factura_detalle ADD CONSTRAINT FK_FACTURADETALLE_PUBLICACION FOREIGN KEY (facturaDetalle_publicacion) REFERENCES NJRE.publicacion;
+ALTER TABLE NJRE.historial_estado_envio 
+ADD CONSTRAINT FK_Historial_Envio FOREIGN KEY (historialEstadoEnvio_envio_id) REFERENCES NJRE.envio;
 
-ALTER TABLE NJRE.usuario_domicilio ADD CONSTRAINT FK_USUARIODOMICILIO_USUARIO FOREIGN KEY (usuarioDomicilio_usuario_id) REFERENCES NJRE.usuario(usuario_id);
-ALTER TABLE NJRE.usuario_domicilio ADD CONSTRAINT FK_USUARIODOMICILIO_DOMICILIO FOREIGN KEY (usuarioDomicilio_domicilio_id) REFERENCES NJRE.domicilio(domicilio_id);
+ALTER TABLE NJRE.factura 
+ADD CONSTRAINT FK_Factura_FacturaDetalle FOREIGN KEY (factura_usuario) REFERENCES NJRE.factura_detalle;
 
---]
+ALTER TABLE NJRE.factura_detalle 
+ADD 
+    CONSTRAINT FK_FacturaDetalle_Concepto FOREIGN KEY (facturaDetalle_concepto_id) REFERENCES NJRE.concepto;
+    CONSTRAINT FK_FacturaDetalle_Factura FOREIGN KEY (facturaDetalle_factura_id) REFERENCES NJRE.factura;
+    CONSTRAINT FK_FacturaDetalle_Publicacion FOREIGN KEY (facturaDetalle_publicacion) REFERENCES NJRE.publicacion;
+
+ALTER TABLE NJRE.usuario_domicilio 
+ADD CONSTRAINT FK_UsuarioDomicilio_Usuario FOREIGN KEY (usuarioDomicilio_usuario_id) REFERENCES NJRE.usuario(usuario_id);
+
+ALTER TABLE NJRE.usuario_domicilio 
+ADD CONSTRAINT FK_UsuarioDomicilio_Domicilio FOREIGN KEY (usuarioDomicilio_domicilio_id) REFERENCES NJRE.domicilio(domicilio_id);
 
 ALTER TABLE NJRE.publicacion
 ADD 
