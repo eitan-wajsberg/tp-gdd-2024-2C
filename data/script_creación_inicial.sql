@@ -740,6 +740,39 @@ BEGIN
 END
 GO
 
+IF Object_id('NJRE.migrar_pago') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_pago
+GO
+
+IF OBJECT_ID('NJRE.migrar_pago') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_pago
+GO
+
+
+CREATE PROCEDURE NJRE.migrar_pago AS
+BEGIN
+    -- Defino un CTE(Una tabla Común) para no repetir subQuery 
+    WITH CTE_Pago AS (
+        SELECT DISTINCT 
+            mp.medioPago_id AS TMP_MEDIO_PAGO_ID, 
+            m.VENTA_CODIGO AS TMP_VENTA_CODIGO, 
+            m.PAGO_FECHA AS TMP_PAGO_FECHA, 
+            m.PAGO_IMPORTE AS TMP_PAGO_IMPORTE,
+            m.PAGO_NRO_TARJETA AS TMP_TARJETA_NRO, 
+            m.PAGO_FECHA_VENC_TARJETA AS TMP_FECHA_VENC_TARJETA, 
+            m.PAGO_CANT_CUOTAS AS TMP_CANT_CUOTAS
+        FROM gd_esquema.Maestra m
+        INNER JOIN NJRE.medio_pago mp ON mp.medio_pago = m.PAGO_TIPO_MEDIO_PAGO
+        WHERE m.VENTA_CODIGO IS NOT NULL
+    )
+
+    INSERT INTO NJRE.pago (pago_medioPago_id, pago_venta_id, pago_fecha, pago_importe)
+    SELECT TMP_MEDIO_PAGO_ID, TMP_VENTA_CODIGO, TMP_PAGO_FECHA, TMP_PAGO_IMPORTE
+    FROM CTE_Pago;
+
+END
+GO
+
 
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
@@ -765,6 +798,8 @@ EXEC NJRE.migrar_publicacion;
 EXEC NJRE.migrar_envio;
 EXEC NJRE.migrar_vendedor;
 EXEC NJRE.migrar_cliente;
+EXEC NJRE.migrar_pago;
+
 
 GO
 
