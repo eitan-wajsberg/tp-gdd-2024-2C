@@ -810,7 +810,30 @@ IF Object_id('NJRE.migrar_envio') IS NOT NULL
 GO
 CREATE PROCEDURE NJRE.migrar_envio AS
 BEGIN
-	-- TODO: acá agregar la migración de envío o7
+	-- TODO: acá agregar la migración de envío y UNIR
+	INSERT INTO NJRE.envio (
+        envio_venta_id, 
+        envio_domicilio_id, 
+        envio_fecha_programada, 
+        envio_hora_inicio, 
+        envio_hora_fin, 
+        envio_fecha_entrega, 
+        envio_costo, 
+        envio_tipo)
+    SELECT DISTINCT 
+        v.venta_id, 
+        d.domicilio_id, 
+        m.ENVIO_FECHA_PROGAMADA, 
+        m.ENVIO_HORA_INICIO, 
+        m.ENVIO_HORA_FIN_INICIO, 
+        m.ENVIO_FECHA_ENTREGA, 
+        m.ENVIO_COSTO, 
+        te.tipoEnvio_nombre
+    FROM gd_esquema.Maestra m
+        INNER JOIN NJRE.venta v ON v.venta_id = m.VENTA_CODIGO 
+        LEFT JOIN NJRE.tipo_envio te ON te.tipoEnvio_nombre = m.ENVIO_TIPO 
+        INNER JOIN NJRE.domicilio ON domicilio_calle = CLI_USUARIO_DOMICILIO_CALLE AND domicilio_nro_calle = CLI_USUARIO_DOMICILIO_NRO_CALLE AND domicilio_localidad = CLI_USUARIO_DOMICILIO_LOCALIDAD AND domicilio_provincia = CLI_USUARIO_DOMICILIO_PROVINCIA
+    WHERE m.VENTA_CODIGO IS NOT NULL
 	
 	INSERT INTO NJRE.historial_estado_envio(historialEstadoEnvio_envio_id, historialEstadoEnvio_fecha, historialEstadoEnvio_estado)
 	SELECT envio_id, envio_fecha_programada, 'En preparación' -- todos los envíos tienen fecha para el 2025 recién, por eso directamente se le pone este estado
