@@ -1,11 +1,11 @@
 @startuml diagrama-entidad-relacion-inicial
 
 entity "publicacion" {
-  * publicacion_id: INT **<<PK>>**
+  * publicacion_id: DECIMAL(18, 0) **<<PK>>**
   --
     * publicacion_producto_id: NVARCHAR(50) **<<FK>>**
     * publicacion_vendedor_id: INT **<<FK>>**
-    * publicacion_almacen_id: INT **<<FK>>**
+    * publicacion_almacen_id: DECIMAL(18, 0) **<<FK>>**
     publicacion_descripcion: NVARCHAR(50)
     * publicacion_fecha_inicio: DATE
     * publicacion_fecha_fin: DATE
@@ -90,7 +90,7 @@ entity "detalle_venta" {
   * detalleVenta_id: INT **<<PK>>**
   --
     * detalleVenta_venta_id: DECIMAL(18,0) **<<FK>>**
-    * detalleVenta_publicacion_id: INT **<<FK>>**
+    * detalleVenta_publicacion_id: DECIMAL(18, 0) **<<FK>>**
     * detalleVenta_precio: DECIMAL(18, 2)
     * detalleVenta_cantidad: DECIMAL(18, 0)
     * detalleVenta_subtotal: DECIMAL(18, 2)
@@ -110,7 +110,7 @@ entity "pago" {
   * pago_id: INT **<<PK>>**
   --
     * pago_medioPago_id: INT **<<FK>>**
-    * pago_venta_id: INT **<<FK>>**
+    * pago_venta_id: DECIMAL(18, 0) **<<FK>>**
     * pago_fecha: DATE
     * pago_importe: DECIMAL(18, 2)
 }
@@ -218,7 +218,7 @@ entity "factura_detalle" {
   * facturaDetalle_id: INT **<<PK>>**
   --
     * facturaDetalle_factura_id: DECIMAL(18, 0) **<<FK>>**
-    * facturaDetalle_publicacion: INT **<<FK>>** 
+    * facturaDetalle_publicacion_id: DECIMAL(18, 0) **<<FK>>** 
     * facturaDetalle_concepto_id: INT **<<FK>>**
     * facturaDetalle_precio_unitario: DECIMAL(18, 2)
     * facturaDetalle_cantidad: DECIMAL(18, 0)
