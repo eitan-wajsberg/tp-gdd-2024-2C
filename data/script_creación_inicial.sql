@@ -819,7 +819,7 @@ BEGIN
         envio_hora_fin, 
         envio_fecha_entrega, 
         envio_costo, 
-        envio_tipo)
+        envio_tipoEnvio_id)
     SELECT DISTINCT 
         v.venta_id, 
         d.domicilio_id, 
@@ -828,11 +828,11 @@ BEGIN
         m.ENVIO_HORA_FIN_INICIO, 
         m.ENVIO_FECHA_ENTREGA, 
         m.ENVIO_COSTO, 
-        te.tipoEnvio_nombre
+        te.tipoEnvio_medio
     FROM gd_esquema.Maestra m
         INNER JOIN NJRE.venta v ON v.venta_id = m.VENTA_CODIGO 
-        LEFT JOIN NJRE.tipo_envio te ON te.tipoEnvio_nombre = m.ENVIO_TIPO 
-        INNER JOIN NJRE.domicilio ON domicilio_calle = CLI_USUARIO_DOMICILIO_CALLE AND domicilio_nro_calle = CLI_USUARIO_DOMICILIO_NRO_CALLE AND domicilio_localidad = CLI_USUARIO_DOMICILIO_LOCALIDAD AND domicilio_provincia = CLI_USUARIO_DOMICILIO_PROVINCIA
+        LEFT JOIN NJRE.tipo_envio te ON te.tipoEnvio_medio = m.ENVIO_TIPO 
+        INNER JOIN NJRE.domicilio d ON domicilio_calle = CLI_USUARIO_DOMICILIO_CALLE AND domicilio_nro_calle = CLI_USUARIO_DOMICILIO_NRO_CALLE AND domicilio_localidad = CLI_USUARIO_DOMICILIO_LOCALIDAD AND domicilio_provincia = CLI_USUARIO_DOMICILIO_PROVINCIA
     WHERE m.VENTA_CODIGO IS NOT NULL
 	
 	INSERT INTO NJRE.historial_estado_envio(historialEstadoEnvio_envio_id, historialEstadoEnvio_fecha, historialEstadoEnvio_estado)
