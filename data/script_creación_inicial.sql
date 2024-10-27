@@ -15,12 +15,15 @@ GO
 -- PROCEDURES AUXILIARES
 -------------------------------------------------------------------------------------------------
 
+IF OBJECT_ID('NJRE.localidad.index_localidad','U') IS NOT NULL
+	DROP INDEX NJRE.localidad.index_localidad;
+
 -- TODO: HACER UN PROCEDURE QUE BORRE INDICES
-IF OBJECT_ID('NJRE.index_usuario','U') IS NOT NULL
-	DROP INDEX NJRE.index_usuario;
+IF OBJECT_ID('NJRE.usuario.index_usuario','U') IS NOT NULL
+	DROP INDEX NJRE.usuario.index_usuario;
 GO
-IF OBJECT_ID('NJRE.index_domicilio','U') IS NOT NULL
-	DROP INDEX NJRE.index_domicilio;
+IF OBJECT_ID('NJRE.domicilio.index_domicilio','U') IS NOT NULL
+	DROP INDEX NJRE.domicilio.index_domicilio;
 GO
 
 IF Object_id('NJRE.borrar_fks') IS NOT NULL 
@@ -681,10 +684,10 @@ BEGIN
         INNER JOIN NJRE.provincia ON provincia_nombre = almacen_provincia
         INNER JOIN NJRE.domicilio ON domicilio_calle = almacen_calle AND domicilio_nro_calle = almacen_nro_calle AND domicilio_localidad = localidad_id AND domicilio_provincia = provincia_id
     WHERE almacen_codigo IS NOT NULL
-
+	/*
 	INSERT INTO NJRE.historial_costo_almacen(historialCostoAlmacen_almacen_id, historialCostoAlmacen_fecha, historialCostoAlmacen_costo_dia)
 	SELECT almacen_id, GETDATE(), almacen_costo_dia
-	FROM NJRE.almacen	
+	FROM NJRE.almacen	*/
 END
 GO
 
@@ -728,43 +731,32 @@ BEGIN
 END
 GO
 
-
--- REVISAR: No estoy para nada seguro de esto
 IF Object_id('NJRE.migrar_usuarioDomicilio') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_usuarioDomicilio
 GO
 CREATE PROCEDURE NJRE.migrar_usuarioDomicilio AS
 BEGIN
-	-- REVISAR - No necesita el nombre del esquema?
-	CREATE INDEX index_usuario ON NJRE.usuario (usuario_nombre, usuario_mail, usuario_fecha_creacion, usuario_pass);
-	CREATE INDEX index_domicilio ON NJRE.domicilio (domicilio_calle, domicilio_nro_calle, domicilio_piso, domicilio_depto, domicilio_cp);
-
     INSERT INTO NJRE.usuario_domicilio (usuarioDomicilio_usuario_id, usuarioDomicilio_domicilio_id)
     SELECT DISTINCT u.usuario_id, d.domicilio_id 
     FROM gd_esquema.Maestra m
-        INNER JOIN NJRE.usuario u 
-            ON ((u.usuario_nombre = m.cli_usuario_nombre 
-                AND u.usuario_mail = m.cliente_mail
-                AND u.usuario_fecha_creacion = cli_usuario_fecha_creacion
-                AND u.usuario_pass = cli_usuario_pass)
-             OR (u.usuario_nombre = m.ven_usuario_nombre 
-                AND u.usuario_mail = m.vendedor_mail
-                AND u.usuario_fecha_creacion = m.ven_usuario_fecha_creacion
-                AND u.usuario_pass = m.ven_usuario_pass))              
-        INNER JOIN NJRE.domicilio d 
-            ON ((d.domicilio_calle = m.cli_usuario_domicilio_calle
+        INNER JOIN NJRE.usuario u ON u.usuario_nombre = m.cli_usuario_nombre  AND u.usuario_mail = m.cliente_mail
+                AND u.usuario_fecha_creacion = cli_usuario_fecha_creacion AND u.usuario_pass = cli_usuario_pass            
+        INNER JOIN NJRE.domicilio d ON d.domicilio_calle = m.cli_usuario_domicilio_calle
                 AND d.domicilio_nro_calle = m.cli_usuario_domicilio_nro_calle
                 AND d.domicilio_piso = m.cli_usuario_domicilio_piso
                 AND d.domicilio_depto = m.cli_usuario_domicilio_depto
                 AND d.domicilio_cp = m.cli_usuario_domicilio_cp
-                AND m.cli_usuario_nombre IS NOT NULL)
-            OR (d.domicilio_calle = m.ven_usuario_domicilio_calle
-                AND d.domicilio_nro_calle = m.ven_usuario_domicilio_nro_calle
-                AND d.domicilio_piso = m.ven_usuario_domicilio_piso
-                AND d.domicilio_depto = m.ven_usuario_domicilio_depto
-                AND d.domicilio_cp = m.ven_usuario_domicilio_cp 
-                AND m.ven_usuario_nombre IS NOT NULL
-            ));
+	UNION
+	SELECT DISTINCT u.usuario_id, d.domicilio_id 
+		FROM gd_esquema.Maestra m
+			INNER JOIN NJRE.usuario u 
+				ON u.usuario_nombre = m.ven_usuario_nombre AND u.usuario_mail = m.vendedor_mail
+					AND u.usuario_fecha_creacion = m.ven_usuario_fecha_creacion AND u.usuario_pass = m.ven_usuario_pass             
+			INNER JOIN NJRE.domicilio d ON d.domicilio_calle = m.ven_usuario_domicilio_calle
+					AND d.domicilio_nro_calle = m.ven_usuario_domicilio_nro_calle
+					AND d.domicilio_piso = m.ven_usuario_domicilio_piso
+					AND d.domicilio_depto = m.ven_usuario_domicilio_depto
+					AND d.domicilio_cp = m.ven_usuario_domicilio_cp 
 END
 GO
 
@@ -850,9 +842,9 @@ BEGIN
     SELECT DISTINCT usuario_id, VENDEDOR_RAZON_SOCIAL, VENDEDOR_CUIT
     FROM gd_esquema.Maestra m 
         INNER JOIN NJRE.usuario ON VEN_USUARIO_NOMBRE = usuario_nombre 
+            AND VENDEDOR_MAIL = usuario_mail
             AND VEN_USUARIO_PASS = usuario_pass 
             AND VEN_USUARIO_FECHA_CREACION = usuario_fecha_creacion 
-            AND VENDEDOR_MAIL = usuario_mail
     WHERE VEN_USUARIO_NOMBRE IS NOT NULL
 END
 GO
@@ -866,9 +858,9 @@ BEGIN
     SELECT DISTINCT usuario_id, CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_FECHA_NAC, CLIENTE_DNI
     FROM gd_esquema.Maestra m 
         INNER JOIN NJRE.usuario ON CLI_USUARIO_NOMBRE = usuario_nombre 
+            AND CLIENTE_MAIL = usuario_mail
             AND CLI_USUARIO_PASS = usuario_pass 
             AND CLI_USUARIO_FECHA_CREACION = usuario_fecha_creacion 
-            AND CLIENTE_MAIL = usuario_mail
     WHERE CLI_USUARIO_NOMBRE IS NOT NULL
 END
 GO
@@ -986,14 +978,17 @@ EXEC NJRE.migrar_tipoEnvio;
 EXEC NJRE.migrar_concepto;
 EXEC NJRE.migrar_provincia;
 EXEC NJRE.migrar_localidad;
+--CREATE NONCLUSTERED INDEX index_localidad ON NJRE.localidad (localidad_nombre) INCLUDE (localidad_id)
 EXEC NJRE.migrar_domicilio;
+--CREATE NONCLUSTERED INDEX index_domicilio ON NJRE.domicilio (domicilio_calle, domicilio_nro_calle) INCLUDE (domicilio_id, domicilio_piso, domicilio_depto, domicilio_cp)
 EXEC NJRE.migrar_almacen;
 EXEC NJRE.migrar_usuario;
+--CREATE NONCLUSTERED INDEX index_usuario ON NJRE.usuario (usuario_nombre) INCLUDE (usuario_id, usuario_mail, usuario_pass, usuario_fecha_creacion)
 EXEC NJRE.migrar_vendedor;
 EXEC NJRE.migrar_cliente;
+EXEC NJRE.migrar_usuarioDomicilio;
 
 /*
-EXEC NJRE.migrar_usuarioDomicilio;
 
 EXEC NJRE.migrar_producto;
 EXEC NJRE.migrar_publicacion;
