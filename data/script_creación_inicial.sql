@@ -15,6 +15,8 @@ GO
 -- PROCEDURES AUXILIARES
 -------------------------------------------------------------------------------------------------
 
+/* Por el momento no utilizamos estos indices
+
 IF OBJECT_ID('NJRE.localidad.index_localidad','U') IS NOT NULL
 	DROP INDEX NJRE.localidad.index_localidad;
 GO
@@ -26,7 +28,9 @@ IF OBJECT_ID('NJRE.domicilio.index_domicilio','U') IS NOT NULL
 	DROP INDEX NJRE.domicilio.index_domicilio;
 GO
 
-IF Object_id('NJRE.borrar_fks') IS NOT NULL 
+*/
+
+IF OBJECT_ID('NJRE.borrar_fks') IS NOT NULL 
     DROP PROCEDURE NJRE.borrar_fks 
 GO 
 CREATE PROCEDURE NJRE.borrar_fks AS
@@ -37,7 +41,7 @@ BEGIN
         + object_schema_name(k.parent_object_id) 
         + '.[' + Object_name(k.parent_object_id) 
         + '] DROP CONSTRAINT ' + k.NAME query 
-    FROM   sys.foreign_keys k
+    FROM sys.foreign_keys k
 
     OPEN query_cursor 
     FETCH NEXT FROM query_cursor INTO @query 
@@ -52,7 +56,7 @@ BEGIN
 END
 GO 
 
-IF Object_id('NJRE.borrar_tablas') IS NOT NULL 
+IF OBJECT_ID('NJRE.borrar_tablas') IS NOT NULL 
   DROP PROCEDURE NJRE.borrar_tablas
 GO 
 CREATE PROCEDURE NJRE.borrar_tablas AS
@@ -76,7 +80,7 @@ BEGIN
 END
 GO 
 
-IF Object_id('NJRE.borrar_procedimientos') IS NOT NULL 
+IF OBJECT_ID('NJRE.borrar_procedimientos') IS NOT NULL 
     DROP PROCEDURE NJRE.borrar_procedimientos
 GO 
 CREATE PROCEDURE NJRE.borrar_procedimientos AS
@@ -100,6 +104,32 @@ BEGIN
 END
 GO 
 
+IF OBJECT_ID('NJRE.borrar_triggers') IS NOT NULL 
+    DROP PROCEDURE NJRE.borrar_triggers
+GO 
+CREATE PROCEDURE NJRE.borrar_triggers AS
+BEGIN
+    DECLARE @query nvarchar(255) 
+    DECLARE query_cursor CURSOR FOR  
+        SELECT 'DROP TRIGGER NJRE.' + t.name
+        FROM sys.triggers t
+			INNER JOIN sys.objects o ON t.parent_id = o.object_id
+			INNER JOIN sys.schemas s ON o.schema_id = s.schema_id
+        WHERE s.name = 'NJRE'
+    
+    OPEN query_cursor 
+    FETCH NEXT FROM query_cursor INTO @query 
+    WHILE @@FETCH_STATUS = 0 
+    BEGIN 
+        EXEC sp_executesql @query 
+        FETCH NEXT FROM query_cursor INTO @query 
+    END 
+
+    CLOSE query_cursor 
+    DEALLOCATE query_cursor 
+END
+GO
+
 
 -------------------------------------------------------------------------------------------------
 -- ELIMINACION DE TABLAS, FKS Y PROCEDURES
@@ -108,6 +138,7 @@ GO
 EXEC NJRE.borrar_fks;
 EXEC NJRE.borrar_tablas;
 EXEC NJRE.borrar_procedimientos;
+EXEC NJRE.borrar_triggers;
 
 GO
 
@@ -429,7 +460,7 @@ ADD
 	CONSTRAINT FK_Domicilio_Localidad FOREIGN KEY (domicilio_localidad) REFERENCES NJRE.localidad (localidad_id),
 	CONSTRAINT FK_Domicilio_Provincia FOREIGN KEY (domicilio_provincia) REFERENCES NJRE.provincia (provincia_id);
 
-ALTER TABLE NJRE.envio 
+ALTER TABLE NJRE.envio
 ADD 
     CONSTRAINT FK_Envio_TipoEnvio FOREIGN KEY (envio_tipoEnvio_id) REFERENCES NJRE.tipo_envio,
     CONSTRAINT FK_Envio_Domicilio FOREIGN KEY (envio_domicilio_id) REFERENCES NJRE.domicilio,
@@ -451,18 +482,18 @@ ADD
 
 ALTER TABLE NJRE.publicacion
 ADD 
-	CONSTRAINT FK_Publicacion_producto FOREIGN KEY (publicacion_producto_id) REFERENCES NJRE.producto (producto_id),
-    CONSTRAINT FK_Publicacion_vendedor FOREIGN KEY (publicacion_vendedor_id) REFERENCES NJRE.vendedor (vendedor_id),
-    CONSTRAINT FK_Publicacion_almacen FOREIGN KEY (publicacion_almacen_id) REFERENCES NJRE.almacen (almacen_id);
+	CONSTRAINT FK_Publicacion_Producto FOREIGN KEY (publicacion_producto_id) REFERENCES NJRE.producto (producto_id),
+    CONSTRAINT FK_Publicacion_Vendedor FOREIGN KEY (publicacion_vendedor_id) REFERENCES NJRE.vendedor (vendedor_id),
+    CONSTRAINT FK_Publicacion_Almacen FOREIGN KEY (publicacion_almacen_id) REFERENCES NJRE.almacen (almacen_id);
 
 ALTER TABLE NJRE.producto
 ADD 
     CONSTRAINT FK_Producto_Marca FOREIGN KEY (producto_marca_id) REFERENCES NJRE.marca (marca_id),
-    CONSTRAINT FK_Producto_modelo FOREIGN KEY (producto_mod_id) REFERENCES NJRE.modelo (modelo_id),
-    CONSTRAINT FK_Producto_subrubro FOREIGN KEY (producto_subrubro_id) REFERENCES NJRE.subrubro (subrubro_id);
+    CONSTRAINT FK_Producto_Modelo FOREIGN KEY (producto_mod_id) REFERENCES NJRE.modelo (modelo_id),
+    CONSTRAINT FK_Producto_Subrubro FOREIGN KEY (producto_subrubro_id) REFERENCES NJRE.subrubro (subrubro_id);
 
 ALTER TABLE NJRE.subrubro 
-ADD CONSTRAINT FK_Subrubro_rubro FOREIGN KEY (subrubro_rubro_id) REFERENCES NJRE.rubro (rubro_id);
+ADD CONSTRAINT FK_Subrubro_Rubro FOREIGN KEY (subrubro_rubro_id) REFERENCES NJRE.rubro (rubro_id);
 
 ALTER TABLE NJRE.vendedor 
 ADD  CONSTRAINT FK_Vendedor_Usuario FOREIGN KEY (vendedor_usuario_id) REFERENCES NJRE.usuario (usuario_id);
@@ -516,7 +547,7 @@ GO
 -- PROCEDURES PARA LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
-IF Object_id('NJRE.migrar_tipoMedioPago') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_tipoMedioPago') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_tipoMedioPago
 GO
 CREATE PROCEDURE NJRE.migrar_tipoMedioPago AS
@@ -528,7 +559,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_medioPago') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_medioPago') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_migrar_medioPago
 GO
 CREATE PROCEDURE NJRE.migrar_medioPago AS
@@ -536,12 +567,12 @@ BEGIN
     INSERT INTO NJRE.medio_pago (medioPago_tipoMedioPago_id, medioPago_nombre) 
     SELECT DISTINCT tipoMedioPago_id, pago_medio_pago 
     FROM gd_esquema.Maestra 
-        JOIN NJRE.tipo_medio_pago ON tipoMedioPago_nombre = pago_tipo_medio_pago
+        INNER JOIN NJRE.tipo_medio_pago ON tipoMedioPago_nombre = pago_tipo_medio_pago
     WHERE pago_medio_pago IS NOT NULL
 END
 GO
 
-IF Object_id('NJRE.migrar_provincia') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_provincia') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_provincia
 GO
 CREATE PROCEDURE NJRE.migrar_provincia AS
@@ -574,7 +605,7 @@ INSERT INTO NJRE.provincia (provincia_id, provincia_nombre) VALUES
 END
 GO
 
-IF Object_id('NJRE.migrar_localidad') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_localidad') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_localidad
 GO
 CREATE PROCEDURE NJRE.migrar_localidad AS
@@ -585,15 +616,11 @@ BEGIN
     SELECT DISTINCT cli_usuario_domicilio_localidad
     FROM gd_esquema.Maestra 
     WHERE cli_usuario_domicilio_localidad IS NOT NULL
-
     UNION
-    
     SELECT DISTINCT ven_usuario_domicilio_localidad
     FROM gd_esquema.Maestra 
     WHERE ven_usuario_domicilio_localidad IS NOT NULL
-
     UNION
-
     SELECT DISTINCT almacen_localidad
     FROM gd_esquema.Maestra 
     WHERE almacen_localidad IS NOT NULL
@@ -605,19 +632,26 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_domicilio') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_domicilio') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_domicilio
 GO
 CREATE PROCEDURE NJRE.migrar_domicilio AS
 BEGIN
-    INSERT INTO NJRE.domicilio (domicilio_calle, domicilio_cp, domicilio_nro_calle, domicilio_piso, domicilio_depto, domicilio_provincia, domicilio_localidad)
-    SELECT DISTINCT cli_usuario_domicilio_calle, cli_usuario_domicilio_cp, cli_usuario_domicilio_nro_calle, cli_usuario_domicilio_piso, cli_usuario_domicilio_depto, provincia_id, localidad_id
+    INSERT INTO NJRE.domicilio (
+        domicilio_calle, domicilio_cp, domicilio_nro_calle, 
+        domicilio_piso, domicilio_depto, domicilio_provincia, domicilio_localidad
+    )
+    SELECT DISTINCT 
+        cli_usuario_domicilio_calle, cli_usuario_domicilio_cp, cli_usuario_domicilio_nro_calle, 
+        cli_usuario_domicilio_piso, cli_usuario_domicilio_depto, provincia_id, localidad_id
     FROM gd_esquema.Maestra 
         INNER JOIN NJRE.provincia ON cli_usuario_domicilio_provincia = provincia_nombre
         INNER JOIN NJRE.localidad ON cli_usuario_domicilio_localidad = localidad_nombre
-    WHERE cli_usuario_domicilio_calle IS NOT NULL 
+    WHERE cli_usuario_domicilio_calle IS NOT NULL
     UNION
-    SELECT DISTINCT ven_usuario_domicilio_calle, ven_usuario_domicilio_cp, ven_usuario_domicilio_nro_calle, ven_usuario_domicilio_piso, ven_usuario_domicilio_depto, provincia_id, localidad_id
+    SELECT DISTINCT 
+        ven_usuario_domicilio_calle, ven_usuario_domicilio_cp, ven_usuario_domicilio_nro_calle, 
+        ven_usuario_domicilio_piso, ven_usuario_domicilio_depto, provincia_id, localidad_id
     FROM gd_esquema.Maestra 
         INNER JOIN NJRE.provincia ON ven_usuario_domicilio_provincia = provincia_nombre
         INNER JOIN NJRE.localidad ON ven_usuario_domicilio_localidad = localidad_nombre
@@ -631,7 +665,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_rubro') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_rubro') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_rubro
 GO
 CREATE PROCEDURE NJRE.migrar_rubro AS
@@ -643,7 +677,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_subrubro') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_subrubro') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_subrubro
 GO
 CREATE PROCEDURE NJRE.migrar_subrubro AS
@@ -651,12 +685,12 @@ BEGIN
     INSERT INTO NJRE.subrubro (subrubro_rubro_id, subrubro_descripcion)
     SELECT DISTINCT n.rubro_id, producto_sub_rubro
     FROM gd_esquema.Maestra m
-    JOIN NJRE.rubro n on n.rubro_descripcion = m.producto_rubro_descripcion
+        INNER JOIN NJRE.rubro n ON n.rubro_descripcion = m.producto_rubro_descripcion
     WHERE producto_sub_rubro IS NOT NULL
 END
 GO
 
-IF Object_id('NJRE.migrar_marca') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_marca') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_marca
 GO
 CREATE PROCEDURE NJRE.migrar_marca AS
@@ -668,7 +702,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_modelo') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_modelo') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_modelo
 GO
 CREATE PROCEDURE NJRE.migrar_modelo AS
@@ -681,7 +715,7 @@ END
 GO
 
 -- TODO: verificar: no existe ningún registro (por ej, publicación) que ocurre antes del 2025? Si no hay, es válido ponerle el getdate()
-IF Object_id('NJRE.migrar_almacen') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_almacen') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_almacen
 GO
 CREATE PROCEDURE NJRE.migrar_almacen AS
@@ -691,12 +725,15 @@ BEGIN
     FROM gd_esquema.Maestra 
         INNER JOIN NJRE.localidad ON localidad_nombre = almacen_localidad
         INNER JOIN NJRE.provincia ON provincia_nombre = almacen_provincia
-        INNER JOIN NJRE.domicilio ON domicilio_calle = almacen_calle AND domicilio_nro_calle = almacen_nro_calle AND domicilio_localidad = localidad_id AND domicilio_provincia = provincia_id
+        INNER JOIN NJRE.domicilio ON domicilio_calle = almacen_calle 
+            AND domicilio_nro_calle = almacen_nro_calle 
+            AND domicilio_localidad = localidad_id 
+            AND domicilio_provincia = provincia_id
     WHERE almacen_codigo IS NOT NULL
 END
 GO
 
-IF Object_id('NJRE.migrar_tipoEnvio') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_tipoEnvio') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_tipoEnvio
 GO
 CREATE PROCEDURE NJRE.migrar_tipoEnvio AS
@@ -708,7 +745,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_concepto') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_concepto') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_concepto
 GO
 CREATE PROCEDURE NJRE.migrar_concepto AS
@@ -720,7 +757,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_usuario') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_usuario') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_usuario
 GO
 CREATE PROCEDURE NJRE.migrar_usuario AS
@@ -736,7 +773,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_usuarioDomicilio') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_usuarioDomicilio') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_usuarioDomicilio
 GO
 CREATE PROCEDURE NJRE.migrar_usuarioDomicilio AS
@@ -744,60 +781,69 @@ BEGIN
     INSERT INTO NJRE.usuario_domicilio (usuarioDomicilio_usuario_id, usuarioDomicilio_domicilio_id)
     SELECT DISTINCT u.usuario_id, d.domicilio_id 
     FROM gd_esquema.Maestra m
-        INNER JOIN NJRE.usuario u ON u.usuario_nombre = m.cli_usuario_nombre  AND u.usuario_mail = m.cliente_mail
-                AND u.usuario_fecha_creacion = cli_usuario_fecha_creacion
+        INNER JOIN NJRE.usuario u ON u.usuario_nombre = m.cli_usuario_nombre  
+            AND u.usuario_mail = m.cliente_mail
+            AND u.usuario_fecha_creacion = cli_usuario_fecha_creacion
 		INNER JOIN NJRE.localidad ON localidad_nombre = CLI_USUARIO_DOMICILIO_LOCALIDAD
 		INNER JOIN NJRE.provincia ON provincia_nombre = CLI_USUARIO_DOMICILIO_PROVINCIA
         INNER JOIN NJRE.domicilio d ON d.domicilio_calle = m.cli_usuario_domicilio_calle
-                AND d.domicilio_nro_calle = m.cli_usuario_domicilio_nro_calle
-                AND d.domicilio_piso = m.cli_usuario_domicilio_piso
-                AND d.domicilio_depto = m.cli_usuario_domicilio_depto
-                AND d.domicilio_cp = m.cli_usuario_domicilio_cp
-				AND d.domicilio_localidad = localidad_id
-				AND d.domicilio_provincia = provincia_id
+            AND d.domicilio_nro_calle = m.cli_usuario_domicilio_nro_calle
+            AND d.domicilio_piso = m.cli_usuario_domicilio_piso
+            AND d.domicilio_depto = m.cli_usuario_domicilio_depto
+            AND d.domicilio_cp = m.cli_usuario_domicilio_cp
+            AND d.domicilio_localidad = localidad_id
+            AND d.domicilio_provincia = provincia_id
 	UNION
 	SELECT DISTINCT u.usuario_id, d.domicilio_id 
 		FROM gd_esquema.Maestra m
-			INNER JOIN NJRE.usuario u 
-				ON u.usuario_nombre = m.ven_usuario_nombre AND u.usuario_mail = m.vendedor_mail
-					AND u.usuario_fecha_creacion = m.ven_usuario_fecha_creacion 
+			INNER JOIN NJRE.usuario u ON u.usuario_nombre = m.ven_usuario_nombre 
+                AND u.usuario_mail = m.vendedor_mail
+                AND u.usuario_fecha_creacion = m.ven_usuario_fecha_creacion 
 			INNER JOIN NJRE.localidad ON localidad_nombre = VEN_USUARIO_DOMICILIO_LOCALIDAD
 			INNER JOIN NJRE.provincia ON provincia_nombre = VEN_USUARIO_DOMICILIO_PROVINCIA          
 			INNER JOIN NJRE.domicilio d ON d.domicilio_calle = m.ven_usuario_domicilio_calle
-					AND d.domicilio_nro_calle = m.ven_usuario_domicilio_nro_calle
-					AND d.domicilio_piso = m.ven_usuario_domicilio_piso
-					AND d.domicilio_depto = m.ven_usuario_domicilio_depto
-					AND d.domicilio_cp = m.ven_usuario_domicilio_cp 
-					AND d.domicilio_localidad = localidad_id
-					AND d.domicilio_provincia = provincia_id
+                AND d.domicilio_nro_calle = m.ven_usuario_domicilio_nro_calle
+                AND d.domicilio_piso = m.ven_usuario_domicilio_piso
+                AND d.domicilio_depto = m.ven_usuario_domicilio_depto
+                AND d.domicilio_cp = m.ven_usuario_domicilio_cp 
+                AND d.domicilio_localidad = localidad_id
+                AND d.domicilio_provincia = provincia_id
 END
 GO
 
-IF Object_id('NJRE.migrar_producto') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_producto') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_producto
 GO
 CREATE PROCEDURE NJRE.migrar_producto AS
 BEGIN
-    INSERT INTO NJRE.producto (producto_marca_id, producto_mod_id, producto_subrubro_id, producto_codigo, producto_precio, producto_fecha_alta, producto_descripcion)
-    SELECT marca_id, producto_mod_codigo, subrubro_id, producto_codigo, producto_precio, MIN(publicacion_fecha), producto_codigo -- valor por default para la migración
+    INSERT INTO NJRE.producto (
+        producto_marca_id, producto_mod_id, producto_subrubro_id, producto_codigo, 
+        producto_precio, producto_fecha_alta, producto_descripcion
+    )
+    SELECT 
+        marca_id, producto_mod_codigo, subrubro_id, producto_codigo, 
+        producto_precio, MIN(publicacion_fecha), producto_codigo -- valor por default para la migración
     FROM gd_esquema.Maestra 
-    INNER JOIN NJRE.marca ON marca_descripcion = producto_marca
-    INNER JOIN NJRE.rubro ON rubro_descripcion = producto_rubro_descripcion
-    INNER JOIN NJRE.subrubro ON subrubro_descripcion = producto_sub_rubro AND subrubro_rubro_id = rubro_id
+        INNER JOIN NJRE.marca ON marca_descripcion = producto_marca
+        INNER JOIN NJRE.rubro ON rubro_descripcion = producto_rubro_descripcion
+        INNER JOIN NJRE.subrubro ON subrubro_descripcion = producto_sub_rubro AND subrubro_rubro_id = rubro_id
     WHERE producto_codigo IS NOT NULL
     GROUP BY producto_marca, producto_mod_codigo, producto_sub_rubro, producto_codigo, producto_precio, marca_id, subrubro_id
 END
 GO
 
-IF Object_id('NJRE.migrar_publicacion') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_publicacion') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_publicacion
 GO
 CREATE PROCEDURE NJRE.migrar_publicacion AS
 BEGIN
-    INSERT INTO NJRE.publicacion (publicacion_id, publicacion_producto_id, publicacion_vendedor_id, publicacion_almacen_id, 
-        publicacion_descripcion, publicacion_fecha_inicio, publicacion_fecha_fin, publicacion_stock, publicacion_precio,
-        publicacion_costo, publicacion_porc_venta)
-	SELECT DISTINCT publicacion_codigo, producto_id, vendedor_id, almacen_id, 
+    INSERT INTO NJRE.publicacion (
+        publicacion_id, publicacion_producto_id, publicacion_vendedor_id, publicacion_almacen_id, 
+        publicacion_descripcion, publicacion_fecha_inicio, publicacion_fecha_fin, publicacion_stock, 
+        publicacion_precio, publicacion_costo, publicacion_porc_venta
+    )
+	SELECT DISTINCT 
+        publicacion_codigo, producto_id, vendedor_id, almacen_id, 
 		PUBLICACION_DESCRIPCION, PUBLICACION_FECHA, PUBLICACION_FECHA_V, PUBLICACION_STOCK, PUBLICACION_PRECIO,
 		PUBLICACION_COSTO, PUBLICACION_PORC_VENTA
     FROM gd_esquema.Maestra m
@@ -810,44 +856,36 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_envio') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_envio') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_envio
 GO
 CREATE PROCEDURE NJRE.migrar_envio AS
 BEGIN
 	INSERT INTO NJRE.envio (
-        envio_venta_id, 
-        envio_domicilio_id, 
-        envio_fecha_programada, 
-        envio_hora_inicio, 
-        envio_hora_fin, 
-        envio_fecha_entrega, 
-        envio_costo, 
-        envio_tipoEnvio_id,
-		envio_estado)
+        envio_venta_id, envio_domicilio_id, envio_fecha_programada, envio_hora_inicio, 
+        envio_hora_fin, envio_fecha_entrega, envio_costo, envio_tipoEnvio_id,envio_estado
+    )
     SELECT DISTINCT 
-        v.venta_id, 
-        d.domicilio_id, 
-        m.ENVIO_FECHA_PROGAMADA, 
-        m.ENVIO_HORA_INICIO, 
-        m.ENVIO_HORA_FIN_INICIO, 
-        m.ENVIO_FECHA_ENTREGA, 
-        m.ENVIO_COSTO, 
-        te.tipoEnvio_id,
-		'En preparación' -- todos los envíos tienen fecha para el 2025 recién, por eso directamente se le pone este estado
+        v.venta_id, d.domicilio_id, m.ENVIO_FECHA_PROGAMADA, m.ENVIO_HORA_INICIO, 
+        m.ENVIO_HORA_FIN_INICIO, m.ENVIO_FECHA_ENTREGA, m.ENVIO_COSTO, te.tipoEnvio_id, 'En preparación' 
+        -- todos los envíos tienen fecha para el 2025 recién, por eso directamente se le pone este estado
     FROM gd_esquema.Maestra m
-	INNER JOIN NJRE.venta v ON v.venta_id = m.VENTA_CODIGO 
-	INNER JOIN NJRE.tipo_envio te ON te.tipoEnvio_medio = m.ENVIO_TIPO 
-	INNER JOIN NJRE.localidad ON localidad_nombre = CLI_USUARIO_DOMICILIO_LOCALIDAD
-	INNER JOIN NJRE.provincia ON provincia_nombre = CLI_USUARIO_DOMICILIO_PROVINCIA
-	INNER JOIN NJRE.domicilio d ON domicilio_calle = CLI_USUARIO_DOMICILIO_CALLE AND domicilio_nro_calle = CLI_USUARIO_DOMICILIO_NRO_CALLE 
-		AND d.domicilio_piso = m.cli_usuario_domicilio_piso AND d.domicilio_depto = m.cli_usuario_domicilio_depto
-		AND d.domicilio_cp = m.cli_usuario_domicilio_cp AND domicilio_localidad = localidad_id AND domicilio_provincia = provincia_id
+        INNER JOIN NJRE.venta v ON v.venta_id = m.VENTA_CODIGO 
+        INNER JOIN NJRE.tipo_envio te ON te.tipoEnvio_medio = m.ENVIO_TIPO 
+        INNER JOIN NJRE.localidad ON localidad_nombre = CLI_USUARIO_DOMICILIO_LOCALIDAD
+        INNER JOIN NJRE.provincia ON provincia_nombre = CLI_USUARIO_DOMICILIO_PROVINCIA
+        INNER JOIN NJRE.domicilio d ON domicilio_calle = CLI_USUARIO_DOMICILIO_CALLE 
+            AND domicilio_nro_calle = CLI_USUARIO_DOMICILIO_NRO_CALLE 
+            AND d.domicilio_piso = m.cli_usuario_domicilio_piso 
+            AND d.domicilio_depto = m.cli_usuario_domicilio_depto
+            AND d.domicilio_cp = m.cli_usuario_domicilio_cp 
+            AND domicilio_localidad = localidad_id 
+            AND domicilio_provincia = provincia_id
     WHERE m.ENVIO_FECHA_PROGAMADA IS NOT NULL
 END
 GO
 
-IF Object_id('NJRE.migrar_vendedor') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_vendedor') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_vendedor
 GO
 CREATE PROCEDURE NJRE.migrar_vendedor AS
@@ -862,7 +900,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_cliente') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_cliente') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_cliente
 GO
 CREATE PROCEDURE NJRE.migrar_cliente AS
@@ -909,17 +947,18 @@ BEGIN
     SELECT TMP_MEDIO_PAGO_ID, TMP_VENTA_CODIGO, TMP_PAGO_FECHA, TMP_PAGO_IMPORTE
     FROM #tmp_pago;
 
-    INSERT INTO NJRE.detalle_pago (detallePago_pago_id, detallePago_tarjeta_nro, detallePago_tarjeta_fecha_vencimiento, 
-        detallePago_cant_cuotas, detallePago_importe_parcial)
+    INSERT INTO NJRE.detalle_pago (
+        detallePago_pago_id, detallePago_tarjeta_nro, detallePago_tarjeta_fecha_vencimiento, 
+        detallePago_cant_cuotas, detallePago_importe_parcial
+    )
     SELECT p.pago_id, t.TMP_TARJETA_NRO, t.TMP_FECHA_VENC_TARJETA, t.TMP_CANT_CUOTAS, t.TMP_PAGO_IMPORTE
-    FROM #tmp_pago t
-    INNER JOIN NJRE.pago p ON p.pago_venta_id = t.TMP_VENTA_CODIGO;
+    FROM #tmp_pago t INNER JOIN NJRE.pago p ON p.pago_venta_id = t.TMP_VENTA_CODIGO;
 
     DROP TABLE #tmp_pago;
 END;
 GO
 
-IF Object_id('NJRE.migrar_venta') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_venta') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_venta
 GO
 CREATE PROCEDURE NJRE.migrar_venta AS
@@ -935,7 +974,7 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_factura') IS NOT NULL 
+IF OBJECT_ID('NJRE.migrar_factura') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_factura
 GO
 CREATE PROCEDURE NJRE.migrar_factura AS
@@ -949,25 +988,18 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_factura_detalle') IS NOT NULL 
-    DROP PROCEDURE NJRE.migrar_factura_detalle
+IF OBJECT_ID('NJRE.migrar_facturaDetalle') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_facturaDetalle
 GO
-CREATE PROCEDURE NJRE.migrar_factura_detalle AS
+CREATE PROCEDURE NJRE.migrar_facturaDetalle AS
 BEGIN
     INSERT INTO NJRE.factura_detalle (
-        facturaDetalle_factura_id, 
-        facturaDetalle_publicacion, 
-        facturaDetalle_concepto_id, 
-        facturaDetalle_precio_unitario, 
-        facturaDetalle_cantidad, 
-        facturaDetalle_subtotal)
+        facturaDetalle_factura_id, facturaDetalle_publicacion, facturaDetalle_concepto_id, 
+        facturaDetalle_precio_unitario, facturaDetalle_cantidad, facturaDetalle_subtotal
+    )
     SELECT DISTINCT 
-        f.factura_id, 
-        p.publicacion_id, 
-        c.concepto_id, 
-        m.FACTURA_DET_PRECIO, 
-        m.FACTURA_DET_CANTIDAD, 
-        m.FACTURA_DET_SUBTOTAL
+        f.factura_id, p.publicacion_id, c.concepto_id, 
+        m.FACTURA_DET_PRECIO, m.FACTURA_DET_CANTIDAD, m.FACTURA_DET_SUBTOTAL
     FROM gd_esquema.Maestra m
         INNER JOIN NJRE.factura f ON f.factura_id = m.FACTURA_NUMERO 
         LEFT JOIN NJRE.publicacion p ON p.publicacion_id = m.PUBLICACION_CODIGO
@@ -976,29 +1008,20 @@ BEGIN
 END
 GO
 
-IF Object_id('NJRE.migrar_detalle_venta') IS NOT NULL 
-    DROP PROCEDURE NJRE.migrar_detalle_venta
+IF OBJECT_ID('NJRE.migrar_detalleVenta') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_detalleVenta
 GO
-CREATE PROCEDURE NJRE.migrar_detalle_venta AS
+CREATE PROCEDURE NJRE.migrar_detalleVenta AS
 BEGIN
-    INSERT INTO NJRE.detalle_venta ( 
-        detalleVenta_venta_id,
-        detalleVenta_publicacion_id, 
-        detalleVenta_precio,
-        detalleVenta_cantidad,
-        detalleVenta_subtotal)
-    SELECT DISTINCT 
-        v.venta_id,
-        p.publicacion_id, 
-        m.VENTA_TOTAL,
-        VENTA_DET_CANT,
-        VENTA_DET_SUB_TOTAL
+    INSERT INTO NJRE.detalle_venta (detalleVenta_venta_id, detalleVenta_publicacion_id, detalleVenta_precio, detalleVenta_cantidad, detalleVenta_subtotal)
+    SELECT DISTINCT v.venta_id, p.publicacion_id, m.VENTA_TOTAL, VENTA_DET_CANT, VENTA_DET_SUB_TOTAL
     FROM gd_esquema.Maestra m 
         INNER JOIN NJRE.publicacion p ON p.publicacion_id = m.PUBLICACION_CODIGO 
         INNER JOIN NJRE.venta v ON v.venta_id = m.VENTA_CODIGO
     WHERE m.VENTA_CODIGO IS NOT NULL
 END
 GO      
+
 
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
@@ -1027,10 +1050,10 @@ EXEC NJRE.migrar_usuarioDomicilio;
 EXEC NJRE.migrar_producto;
 EXEC NJRE.migrar_publicacion;
 EXEC NJRE.migrar_venta;
-EXEC NJRE.migrar_detalle_venta;
+EXEC NJRE.migrar_detalleVenta;
 EXEC NJRE.migrar_envio;
 EXEC NJRE.migrar_factura;
 EXEC NJRE.migrar_pago;
-EXEC NJRE.migrar_factura_detalle;
+EXEC NJRE.migrar_facturaDetalle;
 
 GO
