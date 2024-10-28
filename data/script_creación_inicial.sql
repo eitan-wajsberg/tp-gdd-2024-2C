@@ -738,7 +738,7 @@ BEGIN
     SELECT DISTINCT u.usuario_id, d.domicilio_id 
     FROM gd_esquema.Maestra m
         INNER JOIN NJRE.usuario u ON u.usuario_nombre = m.cli_usuario_nombre  AND u.usuario_mail = m.cliente_mail
-                AND u.usuario_fecha_creacion = cli_usuario_fecha_creacion -- los usuarios registrados no se distinguen por más que estos 3 datos
+                AND u.usuario_fecha_creacion = cli_usuario_fecha_creacion
 		INNER JOIN NJRE.localidad ON localidad_nombre = CLI_USUARIO_DOMICILIO_LOCALIDAD
 		INNER JOIN NJRE.provincia ON provincia_nombre = CLI_USUARIO_DOMICILIO_PROVINCIA
         INNER JOIN NJRE.domicilio d ON d.domicilio_calle = m.cli_usuario_domicilio_calle
@@ -876,37 +876,45 @@ END
 GO
 
 IF OBJECT_ID('NJRE.migrar_pago') IS NOT NULL 
-    DROP PROCEDURE NJRE.migrar_pago
+    DROP PROCEDURE NJRE.migrar_pago;
 GO
 CREATE PROCEDURE NJRE.migrar_pago AS
 BEGIN
-    -- Defino un CTE(Una tabla Común) para no repetir subQuery 
-    WITH CTE_Pago AS (
-        SELECT DISTINCT 
-            mp.medioPago_id AS TMP_MEDIO_PAGO_ID, 
-            m.VENTA_CODIGO AS TMP_VENTA_CODIGO, 
-            m.PAGO_FECHA AS TMP_PAGO_FECHA, 
-            m.PAGO_IMPORTE AS TMP_PAGO_IMPORTE,
-            m.PAGO_NRO_TARJETA AS TMP_TARJETA_NRO, 
-            m.PAGO_FECHA_VENC_TARJETA AS TMP_FECHA_VENC_TARJETA, 
-            m.PAGO_CANT_CUOTAS AS TMP_CANT_CUOTAS
-        FROM gd_esquema.Maestra m
-        INNER JOIN NJRE.medio_pago mp ON mp.medioPago_nombre = m.PAGO_TIPO_MEDIO_PAGO
-        WHERE m.VENTA_CODIGO IS NOT NULL
-    )
+    CREATE TABLE #tmp_pago (
+        TMP_MEDIO_PAGO_ID INT,
+        TMP_VENTA_CODIGO INT,
+        TMP_PAGO_FECHA DATE,
+        TMP_PAGO_IMPORTE DECIMAL(18, 2),
+        TMP_TARJETA_NRO VARCHAR(50),
+        TMP_FECHA_VENC_TARJETA DATE,
+        TMP_CANT_CUOTAS INT
+    );
 
-    -- Inserto en el pago la CTE
+    INSERT INTO #tmp_pago
+    SELECT DISTINCT 
+        mp.medioPago_id AS TMP_MEDIO_PAGO_ID, 
+        m.VENTA_CODIGO AS TMP_VENTA_CODIGO, 
+        m.PAGO_FECHA AS TMP_PAGO_FECHA, 
+        m.PAGO_IMPORTE AS TMP_PAGO_IMPORTE,
+        m.PAGO_NRO_TARJETA AS TMP_TARJETA_NRO, 
+        m.PAGO_FECHA_VENC_TARJETA AS TMP_FECHA_VENC_TARJETA, 
+        m.PAGO_CANT_CUOTAS AS TMP_CANT_CUOTAS
+    FROM gd_esquema.Maestra m
+    INNER JOIN NJRE.medio_pago mp ON mp.medioPago_nombre = m.PAGO_MEDIO_PAGO
+    WHERE m.VENTA_CODIGO IS NOT NULL;
+
     INSERT INTO NJRE.pago (pago_medioPago_id, pago_venta_id, pago_fecha, pago_importe)
     SELECT TMP_MEDIO_PAGO_ID, TMP_VENTA_CODIGO, TMP_PAGO_FECHA, TMP_PAGO_IMPORTE
-    FROM CTE_Pago;
+    FROM #tmp_pago;
 
-    -- Inserto en el detallePago la CTE
     INSERT INTO NJRE.detalle_pago (detallePago_pago_id, detallePago_tarjeta_nro, detallePago_tarjeta_fecha_vencimiento, 
         detallePago_cant_cuotas, detallePago_importe_parcial)
-    SELECT p.pago_id, c.TMP_TARJETA_NRO, c.TMP_FECHA_VENC_TARJETA, c.TMP_CANT_CUOTAS, c.TMP_PAGO_IMPORTE
-    FROM CTE_Pago c
-    INNER JOIN NJRE.pago p ON p.pago_venta_id = c.TMP_VENTA_CODIGO;
-END
+    SELECT p.pago_id, t.TMP_TARJETA_NRO, t.TMP_FECHA_VENC_TARJETA, t.TMP_CANT_CUOTAS, t.TMP_PAGO_IMPORTE
+    FROM #tmp_pago t
+    INNER JOIN NJRE.pago p ON p.pago_venta_id = t.TMP_VENTA_CODIGO;
+
+    DROP TABLE #tmp_pago;
+END;
 GO
 
 IF Object_id('NJRE.migrar_venta') IS NOT NULL 
@@ -966,6 +974,29 @@ BEGIN
 END
 GO
 
+IF Object_id('NJRE.migrar_detalle_venta') IS NOT NULL 
+    DROP PROCEDURE NJRE.migrar_detalle_venta
+GO
+CREATE PROCEDURE NJRE.migrar_detalle_venta AS
+BEGIN
+    INSERT INTO NJRE.detalle_venta ( 
+        detalleVenta_venta_id,
+        detalleVenta_publicacion_id, 
+        detalleVenta_precio,
+        detalleVenta_cantidad,
+        detalleVenta_subtotal)
+    SELECT DISTINCT 
+        v.venta_id,
+        p.publicacion_id, 
+        m.VENTA_TOTAL,
+        VENTA_DET_CANT,
+        VENTA_DET_SUB_TOTAL
+    FROM gd_esquema.Maestra m 
+        INNER JOIN NJRE.publicacion p ON p.publicacion_id = m.PUBLICACION_CODIGO 
+        INNER JOIN NJRE.venta v ON v.venta_id = m.VENTA_CODIGO
+    WHERE m.VENTA_CODIGO IS NOT NULL
+END
+GO      
 
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
@@ -984,12 +1015,12 @@ EXEC NJRE.migrar_concepto;
 EXEC NJRE.migrar_provincia;
 EXEC NJRE.migrar_localidad;
 
---CREATE NONCLUSTERED INDEX index_localidad ON NJRE.localidad (localidad_nombre) INCLUDE (localidad_id)
+-- CREATE NONCLUSTERED INDEX index_localidad ON NJRE.localidad (localidad_nombre) INCLUDE (localidad_id)
 EXEC NJRE.migrar_domicilio;
---CREATE NONCLUSTERED INDEX index_domicilio ON NJRE.domicilio (domicilio_calle, domicilio_nro_calle) INCLUDE (domicilio_id, domicilio_piso, domicilio_depto, domicilio_cp)
+-- CREATE NONCLUSTERED INDEX index_domicilio ON NJRE.domicilio (domicilio_calle, domicilio_nro_calle) INCLUDE (domicilio_id, domicilio_piso, domicilio_depto, domicilio_cp)
 EXEC NJRE.migrar_almacen;
 EXEC NJRE.migrar_usuario;
---CREATE NONCLUSTERED INDEX index_usuario ON NJRE.usuario (usuario_nombre) INCLUDE (usuario_id, usuario_mail, usuario_fecha_creacion)
+-- CREATE NONCLUSTERED INDEX index_usuario ON NJRE.usuario (usuario_nombre) INCLUDE (usuario_id, usuario_mail, usuario_fecha_creacion)
 EXEC NJRE.migrar_vendedor;
 EXEC NJRE.migrar_cliente;
 EXEC NJRE.migrar_usuarioDomicilio;
@@ -997,14 +1028,13 @@ EXEC NJRE.migrar_producto;
 EXEC NJRE.migrar_publicacion;
 
 EXEC NJRE.migrar_venta;
--- TODO: FALTA DETALLE VENTA
+EXEC NJRE.migrar_detalle_venta;
 EXEC NJRE.migrar_envio;
 EXEC NJRE.migrar_factura;
 
-/*
 EXEC NJRE.migrar_pago;
 EXEC NJRE.migrar_factura_detalle;
-*/
+
 GO
 
 -------------------------------------------------------------------------------------------------
