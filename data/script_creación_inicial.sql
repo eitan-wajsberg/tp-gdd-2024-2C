@@ -17,7 +17,7 @@ GO
 
 IF OBJECT_ID('NJRE.localidad.index_localidad','U') IS NOT NULL
 	DROP INDEX NJRE.localidad.index_localidad;
-
+GO
 -- TODO: HACER UN PROCEDURE QUE BORRE INDICES
 IF OBJECT_ID('NJRE.usuario.index_usuario','U') IS NOT NULL
 	DROP INDEX NJRE.usuario.index_usuario;
@@ -108,7 +108,6 @@ GO
 EXEC NJRE.borrar_fks;
 EXEC NJRE.borrar_tablas;
 EXEC NJRE.borrar_procedimientos;
--- REVISAR: Las FKs tambien las deberiamos eliminar, no? o se eliminan en conjunto con las tablas?
 
 GO
 
@@ -489,15 +488,28 @@ GO
 
 
 -------------------------------------------------------------------------------------------------
--- FUNCIONES PARA LA MIGRACION DE DATOS
+-- TRIGGERS PARA LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
-/*
-CREATE FUNCTION NJRE.obtener_id_tipoMedioPago(@nombre NVARCHAR(50)) AS
+CREATE TRIGGER insertarHistorialEstadoEnvio 
+ON NJRE.envio
+AFTER INSERT AS
 BEGIN
-    RETURN (SELECT TOP 1 tipoMedioPago_id FROM NJRE.tipo_medio_pago WHERE tipoMedioPago_nombre = @nombre)
+    INSERT INTO NJRE.historial_estado_envio(historialEstadoEnvio_envio_id, historialEstadoEnvio_fecha, historialEstadoEnvio_estado)
+	SELECT envio_id, GETDATE(), envio_estado
+	FROM inserted
 END
-*/
+GO
+
+CREATE TRIGGER insertarHistorialCostoAlmacen 
+ON NJRE.almacen
+AFTER INSERT AS
+BEGIN
+    INSERT INTO NJRE.historial_costo_almacen(historialCostoAlmacen_almacen_id, historialCostoAlmacen_fecha, historialCostoAlmacen_costo_dia)
+    SELECT almacen_id, GETDATE(), almacen_costo_dia
+	FROM inserted
+END
+GO
 
 
 -------------------------------------------------------------------------------------------------
@@ -681,11 +693,6 @@ BEGIN
         INNER JOIN NJRE.provincia ON provincia_nombre = almacen_provincia
         INNER JOIN NJRE.domicilio ON domicilio_calle = almacen_calle AND domicilio_nro_calle = almacen_nro_calle AND domicilio_localidad = localidad_id AND domicilio_provincia = provincia_id
     WHERE almacen_codigo IS NOT NULL
-	
-	-- TODO: propongo que lo movamos a un trigger. Trigger de cuando hay un nuevo almacén y de cuando se modifica almacen_costo_dia
-	INSERT INTO NJRE.historial_costo_almacen(historialCostoAlmacen_almacen_id, historialCostoAlmacen_fecha, historialCostoAlmacen_costo_dia)
-	SELECT almacen_id, GETDATE(), almacen_costo_dia
-	FROM NJRE.almacen
 END
 GO
 
@@ -808,7 +815,6 @@ IF Object_id('NJRE.migrar_envio') IS NOT NULL
 GO
 CREATE PROCEDURE NJRE.migrar_envio AS
 BEGIN
-	-- TODO: acá agregar la migración de envío y UNIR
 	INSERT INTO NJRE.envio (
         envio_venta_id, 
         envio_domicilio_id, 
@@ -838,10 +844,6 @@ BEGIN
 		AND d.domicilio_piso = m.cli_usuario_domicilio_piso AND d.domicilio_depto = m.cli_usuario_domicilio_depto
 		AND d.domicilio_cp = m.cli_usuario_domicilio_cp AND domicilio_localidad = localidad_id AND domicilio_provincia = provincia_id
     WHERE m.ENVIO_FECHA_PROGAMADA IS NOT NULL
-	
-	INSERT INTO NJRE.historial_estado_envio(historialEstadoEnvio_envio_id, historialEstadoEnvio_fecha, historialEstadoEnvio_estado)
-	SELECT envio_id, envio_fecha_programada, 'En preparación' -- todos los envíos tienen fecha para el 2025 recién, por eso directamente se le pone este estado
-	FROM NJRE.envio
 END
 GO
 
@@ -1002,7 +1004,6 @@ GO
 -- EJECUCION DE LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
--- REVISAR: Probablemente el orden de ejecucion no sea correcto
 -- PROPUESTA: Tambien podriamos hacer un procedure que ejecute todos los procedures de migracion.
 EXEC NJRE.migrar_tipoMedioPago;
 EXEC NJRE.migrar_medioPago;
@@ -1014,7 +1015,6 @@ EXEC NJRE.migrar_tipoEnvio;
 EXEC NJRE.migrar_concepto;
 EXEC NJRE.migrar_provincia;
 EXEC NJRE.migrar_localidad;
-
 -- CREATE NONCLUSTERED INDEX index_localidad ON NJRE.localidad (localidad_nombre) INCLUDE (localidad_id)
 EXEC NJRE.migrar_domicilio;
 -- CREATE NONCLUSTERED INDEX index_domicilio ON NJRE.domicilio (domicilio_calle, domicilio_nro_calle) INCLUDE (domicilio_id, domicilio_piso, domicilio_depto, domicilio_cp)
@@ -1026,20 +1026,11 @@ EXEC NJRE.migrar_cliente;
 EXEC NJRE.migrar_usuarioDomicilio;
 EXEC NJRE.migrar_producto;
 EXEC NJRE.migrar_publicacion;
-
 EXEC NJRE.migrar_venta;
 EXEC NJRE.migrar_detalle_venta;
 EXEC NJRE.migrar_envio;
 EXEC NJRE.migrar_factura;
-
 EXEC NJRE.migrar_pago;
 EXEC NJRE.migrar_factura_detalle;
 
 GO
-
--------------------------------------------------------------------------------------------------
--- ELIMINACION DE PROCEDURES ?
--------------------------------------------------------------------------------------------------
-
--- EXEC NJRE.eliminar_procedures;
--- GO
