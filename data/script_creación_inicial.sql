@@ -15,21 +15,6 @@ GO
 -- PROCEDURES AUXILIARES
 -------------------------------------------------------------------------------------------------
 
-/* Por el momento no utilizamos estos indices
-
-IF OBJECT_ID('NJRE.localidad.index_localidad','U') IS NOT NULL
-	DROP INDEX NJRE.localidad.index_localidad;
-GO
--- TODO: HACER UN PROCEDURE QUE BORRE INDICES
-IF OBJECT_ID('NJRE.usuario.index_usuario','U') IS NOT NULL
-	DROP INDEX NJRE.usuario.index_usuario;
-GO
-IF OBJECT_ID('NJRE.domicilio.index_domicilio','U') IS NOT NULL
-	DROP INDEX NJRE.domicilio.index_domicilio;
-GO
-
-*/
-
 IF OBJECT_ID('NJRE.borrar_fks') IS NOT NULL 
     DROP PROCEDURE NJRE.borrar_fks 
 GO 
@@ -714,7 +699,6 @@ BEGIN
 END
 GO
 
--- TODO: verificar: no existe ningún registro (por ej, publicación) que ocurre antes del 2025? Si no hay, es válido ponerle el getdate()
 IF OBJECT_ID('NJRE.migrar_almacen') IS NOT NULL 
     DROP PROCEDURE NJRE.migrar_almacen
 GO
@@ -966,7 +950,7 @@ BEGIN
     INSERT INTO NJRE.venta (venta_id, venta_cliente_id, venta_fecha, venta_total)
     SELECT DISTINCT VENTA_CODIGO, c.cliente_id, VENTA_FECHA, VENTA_TOTAL
     FROM gd_esquema.Maestra m 
-        INNER JOIN NJRE.usuario u ON CLI_USUARIO_NOMBRE = usuario_nombre -- filtro al por el cliente por el user id, para evitar colisiones, REVISAR ... Ro: a mí me parece bien
+        INNER JOIN NJRE.usuario u ON CLI_USUARIO_NOMBRE = usuario_nombre
             AND CLI_USUARIO_FECHA_CREACION = usuario_fecha_creacion 
             AND CLIENTE_MAIL = usuario_mail
         INNER JOIN NJRE.cliente c ON  u.usuario_id = cliente_usuario_id
@@ -1027,7 +1011,6 @@ GO
 -- EJECUCION DE LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
--- PROPUESTA: Tambien podriamos hacer un procedure que ejecute todos los procedures de migracion.
 EXEC NJRE.migrar_tipoMedioPago;
 EXEC NJRE.migrar_medioPago;
 EXEC NJRE.migrar_rubro;
@@ -1038,12 +1021,9 @@ EXEC NJRE.migrar_tipoEnvio;
 EXEC NJRE.migrar_concepto;
 EXEC NJRE.migrar_provincia;
 EXEC NJRE.migrar_localidad;
--- CREATE NONCLUSTERED INDEX index_localidad ON NJRE.localidad (localidad_nombre) INCLUDE (localidad_id)
 EXEC NJRE.migrar_domicilio;
--- CREATE NONCLUSTERED INDEX index_domicilio ON NJRE.domicilio (domicilio_calle, domicilio_nro_calle) INCLUDE (domicilio_id, domicilio_piso, domicilio_depto, domicilio_cp)
 EXEC NJRE.migrar_almacen;
 EXEC NJRE.migrar_usuario;
--- CREATE NONCLUSTERED INDEX index_usuario ON NJRE.usuario (usuario_nombre) INCLUDE (usuario_id, usuario_mail, usuario_fecha_creacion)
 EXEC NJRE.migrar_vendedor;
 EXEC NJRE.migrar_cliente;
 EXEC NJRE.migrar_usuarioDomicilio;
