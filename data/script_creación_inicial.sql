@@ -827,7 +827,7 @@ BEGIN
         publicacion_precio, publicacion_costo, publicacion_porc_venta
     )
 	SELECT DISTINCT 
-        publicacion_codigo, producto_id, vendedor_id, almacen_id, 
+        publicacion_codigo, producto_id, vendedor_id, almacen_codigo, 
 		PUBLICACION_DESCRIPCION, PUBLICACION_FECHA, PUBLICACION_FECHA_V, PUBLICACION_STOCK, PUBLICACION_PRECIO,
 		PUBLICACION_COSTO, PUBLICACION_PORC_VENTA
     FROM gd_esquema.Maestra m
@@ -835,7 +835,6 @@ BEGIN
         INNER JOIN NJRE.subrubro ON subrubro_descripcion = producto_sub_rubro AND subrubro_rubro_id = rubro_id
         INNER JOIN NJRE.producto p ON producto_subrubro_id = subrubro_id AND p.producto_codigo = m.PRODUCTO_CODIGO
 		INNER JOIN NJRE.vendedor n ON n.vendedor_razon_social = m.vendedor_razon_social
-        INNER JOIN NJRE.almacen ON almacen_id = almacen_codigo
     WHERE publicacion_codigo IS NOT NULL
 END
 GO
@@ -850,11 +849,10 @@ BEGIN
         envio_hora_fin, envio_fecha_entrega, envio_costo, envio_tipoEnvio_id,envio_estado
     )
     SELECT DISTINCT 
-        v.venta_id, d.domicilio_id, m.ENVIO_FECHA_PROGAMADA, m.ENVIO_HORA_INICIO, 
+        VENTA_CODIGO, d.domicilio_id, m.ENVIO_FECHA_PROGAMADA, m.ENVIO_HORA_INICIO, 
         m.ENVIO_HORA_FIN_INICIO, m.ENVIO_FECHA_ENTREGA, m.ENVIO_COSTO, te.tipoEnvio_id, 'En preparación' 
         -- todos los envíos tienen fecha para el 2025 recién, por eso directamente se le pone este estado
     FROM gd_esquema.Maestra m
-        INNER JOIN NJRE.venta v ON v.venta_id = m.VENTA_CODIGO 
         INNER JOIN NJRE.tipo_envio te ON te.tipoEnvio_medio = m.ENVIO_TIPO 
         INNER JOIN NJRE.localidad ON localidad_nombre = CLI_USUARIO_DOMICILIO_LOCALIDAD
         INNER JOIN NJRE.provincia ON provincia_nombre = CLI_USUARIO_DOMICILIO_PROVINCIA
@@ -950,10 +948,7 @@ BEGIN
     INSERT INTO NJRE.venta (venta_id, venta_cliente_id, venta_fecha, venta_total)
     SELECT DISTINCT VENTA_CODIGO, c.cliente_id, VENTA_FECHA, VENTA_TOTAL
     FROM gd_esquema.Maestra m 
-        INNER JOIN NJRE.usuario u ON CLI_USUARIO_NOMBRE = usuario_nombre
-            AND CLI_USUARIO_FECHA_CREACION = usuario_fecha_creacion 
-            AND CLIENTE_MAIL = usuario_mail
-        INNER JOIN NJRE.cliente c ON  u.usuario_id = cliente_usuario_id
+        INNER JOIN NJRE.cliente c ON c.cliente_dni = m.CLIENTE_DNI and c.cliente_nombre = m.cliente_nombre 
     WHERE VENTA_CODIGO IS NOT NULL
 END
 GO
@@ -982,11 +977,9 @@ BEGIN
         facturaDetalle_precio_unitario, facturaDetalle_cantidad, facturaDetalle_subtotal
     )
     SELECT DISTINCT 
-        f.factura_id, p.publicacion_id, c.concepto_id, 
+        FACTURA_NUMERO, PUBLICACION_CODIGO, c.concepto_id, 
         m.FACTURA_DET_PRECIO, m.FACTURA_DET_CANTIDAD, m.FACTURA_DET_SUBTOTAL
     FROM gd_esquema.Maestra m
-        INNER JOIN NJRE.factura f ON f.factura_id = m.FACTURA_NUMERO 
-        LEFT JOIN NJRE.publicacion p ON p.publicacion_id = m.PUBLICACION_CODIGO
         LEFT JOIN NJRE.concepto c ON c.concepto_nombre = m.FACTURA_DET_TIPO 
     WHERE m.FACTURA_NUMERO IS NOT NULL
 END
@@ -998,10 +991,8 @@ GO
 CREATE PROCEDURE NJRE.migrar_detalleVenta AS
 BEGIN
     INSERT INTO NJRE.detalle_venta (detalleVenta_venta_id, detalleVenta_publicacion_id, detalleVenta_precio, detalleVenta_cantidad, detalleVenta_subtotal)
-    SELECT DISTINCT v.venta_id, p.publicacion_id, m.VENTA_TOTAL, VENTA_DET_CANT, VENTA_DET_SUB_TOTAL
+    SELECT DISTINCT VENTA_CODIGO, PUBLICACION_CODIGO, m.VENTA_TOTAL, VENTA_DET_CANT, VENTA_DET_SUB_TOTAL
     FROM gd_esquema.Maestra m 
-        INNER JOIN NJRE.publicacion p ON p.publicacion_id = m.PUBLICACION_CODIGO 
-        INNER JOIN NJRE.venta v ON v.venta_id = m.VENTA_CODIGO
     WHERE m.VENTA_CODIGO IS NOT NULL
 END
 GO      
@@ -1033,7 +1024,7 @@ EXEC NJRE.migrar_venta;
 EXEC NJRE.migrar_detalleVenta;
 EXEC NJRE.migrar_envio;
 EXEC NJRE.migrar_factura;
-EXEC NJRE.migrar_pago;
 EXEC NJRE.migrar_facturaDetalle;
+EXEC NJRE.migrar_pago;
 
 GO
