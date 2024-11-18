@@ -1,4 +1,4 @@
-@startuml diagrama-entidad-relacion-BI
+@startuml  diagrama-entidad-relacion-BI.
 
 /'
     Aclaraciones:
@@ -17,58 +17,20 @@
         - Tengo dudas sobre si el "producto" debería ser un hecho o una dimensión, o si puede ser ambas cosas en distintas tablas. La misma duda tengo con "publicación".
 '/
 
+
+'----------------------------------
+'---------- HECHO VENTA -----------
+'----------------------------------
+
 entity "hecho_venta" {
   * hechoVenta_tiempo_id: INT **<<FK>>**
   * hechoVenta_rangoHorario_id: INT **<<FK>>**
-  * hechoVenta_rangoEtario_id: INT **<<FK>>**
-  ' * hechoVenta_producto_id: INT **<<FK>>**
-  ' * hechoVenta_almacen_id: INT **<<FK>>**
-  ' * hechoVenta_cliente_id: INT **<<FK>>**
+  * hechoVenta_ubicacion_id: INT **<<FK>>**
   --
-    * hechoVenta_total: DECIMAL(10, 2)
-    ' * hechoVenta_cantidadTotalProductos: INT
+    * hechoVenta_valorPromedio: DECIMAL(10, 2)
+    * hechoVenta_cantidadVentas: INT
 }
 
-entity "hecho_pago" {
-  * hechoPago_tipoMedioPago_id: INT **<<FK>>**
-  * hechoPago_tiempo_id: INT **<<FK>>**
-  * hechoPago_rangoEtario_id: INT **<<FK>>** 
-  ' * hechoPago_cliente_id: INT **<<FK>>**
-  --
-    * hechoPago_importe: DECIMAL(18, 2)
-}
-
-entity "hecho_envio" {
-  * hechoEnvio_tiempo_id: INT **<<FK>>**
-  * hechoEnvio_ubicacion_id: INT **<<FK>>**
-  ' * hechoEnvio_estado_id: INT **<<FK>>**
-  * hechoEnvio_tipoEnvio_id: INT **<<FK>>** 
-  --
-    * concepto_nombre: NVARCHAR(50)
-}
-
-
-entity "hecho_factura" {
-  * hechoFactura_tiempo_id: INT **<<FK>>**
-  ' * hechoFactura_usuario_id: INT **<<FK>>** 
-  ' * hechoFactura_concepto_id: INT **<<FK>>**
-  --
-    * hechoFactura_total: DECIMAL(18, 2)
-    * hechoFactura_cantidad: DECIMAL(18, 0)
-}
-
-entity "hecho_publicacion" {
-  * hechoPublicacion_tiempo_id: INT **<<FK>>**
-  * hechoPublicacion_rubro_id: INT **<<FK>>**
-  ' * hechoPublicacion_almacen_id: INT **<<FK>>**
-  ' * hechoPublicacion_producto_id: INT **<<FK>>** 
-  --
-    * hechoPublicacion_costo: DECIMAL(18, 2)
-    * hechoPublicacion_precio: DECIMAL(18, 2) 
-}
-
-
-' no estoy seguro de que sean los mejores tipos de datos para tiempos, pero asi estaban en el ejemplo del profe 
 entity "tiempo" {
   * tiempo_id: INT **<<PK>>**
   --
@@ -84,19 +46,6 @@ entity "ubicacion" {
     * ubicacion_provincia: NVARCHAR(50)
 }
 
-entity "rango_etario_cliente" {
-  * rangoEtarioCliente_id: INT **<<PK>>**
-  --
-    rangoEtarioCliente_nombre: NVARCHAR(16)
-}
-note bottom
-    Rangos etarios: 
-        - JUVENTUD: < 25
-        - ADULTEZ_TEMPRANA: [25, 35)
-        - ADULTEZ_MEDIA: [35, 50]
-        - ADULTEZ_AVANZADA: > 50
-end note
-
 entity "rango_horario" {
   * rangoHorario_id: INT **<<PK>>**
   --
@@ -110,10 +59,197 @@ note bottom
         - NOCHE: 18:00 - 24:00 
 end note
 
+hecho_venta -- "tiempo"
+hecho_venta -- "ubicacion"
+hecho_venta -- "rango_horario"
+
+
+'----------------------------------
+'---------- HECHO RUBRO -----------
+'----------------------------------
+
+entity "hecho_rubro" {
+  * hechoRubro_ubicacion_id: INT **<<FK>>**
+  * hechoRubro_rangoEtarioCliente_id: INT **<<FK>>**
+  * hechoRubro_tiempo_id: INT **<<FK>>**
+  --
+    * hechoRubro_nombre: NVARCHAR(50)
+    * hechoRubro_cantidadVentas: INT
+}
+
+entity "rango_etario_cliente" {
+  * rangoEtarioCliente_id: INT **<<PK>>**
+  --
+    * rangoEtarioCliente_nombre: NVARCHAR(16)
+}
+note bottom
+    Rangos etarios: 
+        - JUVENTUD: < 25
+        - ADULTEZ_TEMPRANA: [25, 35)
+        - ADULTEZ_MEDIA: [35, 50]
+        - ADULTEZ_AVANZADA: > 50
+end note
+
+entity "tiempo " {
+  * tiempo_id: INT **<<PK>>**
+  --
+    * tiempo_anio: INT  
+    * tiempo_cuatrimestre: INT
+    * tiempo_mes: INT
+}
+
+entity "ubicacion " {
+  * ubicacion_id: INT **<<PK>>**
+  --
+    * ubicacion_localidad: NVARCHAR(50)
+    * ubicacion_provincia: NVARCHAR(50)
+}
+
+hecho_rubro -- "tiempo "
+hecho_rubro -- "ubicacion "
+hecho_rubro -- "rango_etario_cliente"
+
+
+'----------------------------------
+'------- HECHO PUBLICACION --------
+'----------------------------------
+
+entity "hecho_publicacion" {
+  * hechoPublicacion_tiempo_id: INT **<<FK>>**
+  * hechoPublicacion_subrubro_id: INT **<<FK>>**
+  * hechoPublicacion_marca_id: INT **<<FK>>**
+  --
+    * hechoPublicacion_diasPromedioVigente: DECIMAL(10, 2)
+    * hechoPublicacion_cantidadStockPromedio: DECIMAL(10, 2)
+}
+
+entity "subrubro" {
+  * subrubro_id: INT **<<PK>>**
+  --
+    * subrubro_rubro: NVARCHAR(50)
+    * subrubro_subrubro: NVARCHAR(50)
+}
+
+entity "marca" {
+  * marca_id: INT **<<PK>>**
+  --
+    * marca_nombre: NVARCHAR(50)
+}
+
+entity "tiempo  " {
+  * tiempo_id: INT **<<PK>>**
+  --
+    * tiempo_anio: INT  
+    * tiempo_cuatrimestre: INT
+    * tiempo_mes: INT
+}
+
+hecho_publicacion -- "tiempo  "
+hecho_publicacion -- "subrubro"
+hecho_publicacion -- "marca"
+
+
+'----------------------------------
+'----------- HECHO PAGO -----------
+'----------------------------------
+
+entity "hecho_pago" {
+  * hechoPago_tipoMedioPago_id: INT **<<FK>>**
+  * hechoPago_tiempo_id: INT **<<FK>>**
+  * hechoPago_ubicacion_id: INT **<<FK>>**
+  --
+    * hechoPago_importeTotalCuotas: DECIMAL(18, 2)
+}
+
 entity "tipo_medio_pago" {
   * tipoMedioPago_id: INT **<<PK>>**
   --
-    * tipoMedioPago_nombre: NVARCHAR(50) 
+    * tipoMedioPago_nombre: NVARCHAR(50)
+}
+
+entity "tiempo   " {
+  * tiempo_id: INT **<<PK>>**
+  --
+    * tiempo_anio: INT  
+    * tiempo_cuatrimestre: INT
+    * tiempo_mes: INT
+}
+
+entity "ubicacion  " {
+  * ubicacion_id: INT **<<PK>>**
+  --
+    * ubicacion_localidad: NVARCHAR(50)
+    * ubicacion_provincia: NVARCHAR(50)
+}
+
+hecho_pago -- "tipo_medio_pago"
+hecho_pago -- "tiempo   "
+hecho_pago -- "ubicacion  "
+
+
+'----------------------------------
+'--------- HECHO FACTURA ----------
+'----------------------------------
+
+entity "hecho_factura" {
+  * hechoFactura_tiempo_id: INT **<<FK>>**
+  * hechoFactura_concepto_id: INT **<<FK>>**
+  * hechoFactura_ubicacionVendedor_id: INT **<<FK>>**
+  --
+    * hechoFactura_porcentajeFacturacion: DECIMAL(18, 2)
+    * hechoFactura_montoFacturado: DECIMAL(18, 2)
+}
+
+entity "concepto" {
+  * concepto_id: INT **<<PK>>**
+  --
+    * concepto_nombre: NVARCHAR(50)
+}
+
+entity "tiempo     " {
+  * tiempo_id: INT **<<PK>>**
+  --
+    * tiempo_anio: INT  
+    * tiempo_cuatrimestre: INT
+    * tiempo_mes: INT
+}
+
+entity "ubicacion    " {
+  * ubicacion_id: INT **<<PK>>**
+  --
+    * ubicacion_localidad: NVARCHAR(50)
+    * ubicacion_provincia: NVARCHAR(50)
+}
+
+hecho_factura -- "tiempo     "
+hecho_factura -- "concepto"
+hecho_factura -- "ubicacion    "
+
+
+'----------------------------------
+'---------- HECHO ENVIO -----------
+'----------------------------------
+
+entity "hecho_envio" {
+  * hechoEnvio_tiempo_id: INT **<<FK>>**
+  * hechoEnvio_ubicacionAlmacen_id: INT **<<FK>>**
+  --
+    * concepto_porcentajeCumplimiento: DECIMAL(18, 2)
+}
+
+entity "tiempo      " {
+  * tiempo_id: INT **<<PK>>**
+  --
+    * tiempo_anio: INT  
+    * tiempo_cuatrimestre: INT
+    * tiempo_mes: INT
+}
+
+entity "ubicacion     " {
+  * ubicacion_id: INT **<<PK>>**
+  --
+    * ubicacion_localidad: NVARCHAR(50)
+    * ubicacion_provincia: NVARCHAR(50)
 }
 
 entity "tipo_envio" {
@@ -122,28 +258,28 @@ entity "tipo_envio" {
     * tipoEnvio_nombre: NVARCHAR(50)
 }
 
-entity "rubro" {
-  * rubro_id: INT **<<PK>>**
+hecho_envio -- "tiempo      "
+hecho_envio -- "ubicacion     "
+hecho_envio -- "tipo_envio"
+
+
+'----------------------------------
+'--------- HECHO LOCALIDAD --------
+'----------------------------------
+
+entity "hecho_localidad" {
+  * hechoLocalidad_ubicacionCliente_id: INT **<<FK>>**
   --
-    * rubro_descripcion: NVARCHAR(50)
-    * rubro_subrubro: NVARCHAR(50)
+    * hechoLocalidad_costoEnvio: DECIMAL(18, 2)
 }
 
-hecho_venta -- tiempo
-hecho_venta -- rango_etario_cliente
-hecho_venta -- rango_horario
+entity "ubicacion      " {
+  * ubicacion_id: INT **<<PK>>**
+  --
+    * ubicacion_localidad: NVARCHAR(50)
+    * ubicacion_provincia: NVARCHAR(50)
+}
 
-hecho_pago -- tipo_medio_pago
-hecho_pago -- rango_etario_cliente
-hecho_pago -- tiempo
+hecho_localidad -- "ubicacion      "
 
-hecho_envio -- tiempo
-hecho_envio -- tipo_envio
-hecho_envio -- ubicacion
-
-hecho_factura -- tiempo
-
-hecho_publicacion -- tiempo
-hecho_publicacion -- rubro
-
-@enduml
+@enduml 
