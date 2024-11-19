@@ -65,7 +65,7 @@ entity "vendedor" {
 entity "almacen" {
   * almacen_id: DECIMAL(18, 0) **<<PK>>**
   --
-    * almacen_docimilio_id: INT **<<FK>>**
+    * almacen_domicilio_id: INT **<<FK>>**
     almacen_nombre: NVARCHAR(50)
     * almacen_costo_dia: DECIMAL(18, 2)
 }
