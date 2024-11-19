@@ -23,9 +23,9 @@
 '----------------------------------
 
 entity "hecho_venta" {
-  * hechoVenta_tiempo_id: INT **<<FK>>**
-  * hechoVenta_rangoHorario_id: INT **<<FK>>**
-  * hechoVenta_ubicacion_id: INT **<<FK>>**
+  * hechoVenta_tiempo_id: INT **<<PK, FK>>**
+  * hechoVenta_rangoHorario_id: INT **<<PK, FK>>**
+  * hechoVenta_ubicacion_id: INT **<<PK, FK>>**
   --
     * hechoVenta_valorPromedio: DECIMAL(10, 2)
     * hechoVenta_cantidadVentas: INT
@@ -69,9 +69,9 @@ hecho_venta -- "rango_horario"
 '----------------------------------
 
 entity "hecho_rubro" {
-  * hechoRubro_ubicacion_id: INT **<<FK>>**
-  * hechoRubro_rangoEtarioCliente_id: INT **<<FK>>**
-  * hechoRubro_tiempo_id: INT **<<FK>>**
+  * hechoRubro_ubicacion_id: INT **<<PK, FK>>**
+  * hechoRubro_rangoEtarioCliente_id: INT **<<PK, FK>>**
+  * hechoRubro_tiempo_id: INT **<<PK, FK>>**
   --
     * hechoRubro_nombre: NVARCHAR(50)
     * hechoRubro_cantidadVentas: INT
@@ -115,9 +115,9 @@ hecho_rubro -- "rango_etario_cliente"
 '----------------------------------
 
 entity "hecho_publicacion" {
-  * hechoPublicacion_tiempo_id: INT **<<FK>>**
-  * hechoPublicacion_subrubro_id: INT **<<FK>>**
-  * hechoPublicacion_marca_id: INT **<<FK>>**
+  * hechoPublicacion_tiempo_id: INT **<<PK, FK>>**
+  * hechoPublicacion_subrubro_id: INT **<<PK, FK>>**
+  * hechoPublicacion_marca_id: INT **<<PK, FK>>**
   --
     * hechoPublicacion_diasPromedioVigente: DECIMAL(10, 2)
     * hechoPublicacion_cantidadStockPromedio: DECIMAL(10, 2)
@@ -154,9 +154,9 @@ hecho_publicacion -- "marca"
 '----------------------------------
 
 entity "hecho_pago" {
-  * hechoPago_tipoMedioPago_id: INT **<<FK>>**
-  * hechoPago_tiempo_id: INT **<<FK>>**
-  * hechoPago_ubicacion_id: INT **<<FK>>**
+  * hechoPago_tipoMedioPago_id: INT **<<PK, FK>>**
+  * hechoPago_tiempo_id: INT **<<PK, FK>>**
+  * hechoPago_ubicacion_id: INT **<<PK, FK>>**
   --
     * hechoPago_importeTotalCuotas: DECIMAL(18, 2)
 }
@@ -192,9 +192,9 @@ hecho_pago -- "ubicacion  "
 '----------------------------------
 
 entity "hecho_factura" {
-  * hechoFactura_tiempo_id: INT **<<FK>>**
-  * hechoFactura_concepto_id: INT **<<FK>>**
-  * hechoFactura_ubicacionVendedor_id: INT **<<FK>>**
+  * hechoFactura_tiempo_id: INT **<<PK, FK>>**
+  * hechoFactura_concepto_id: INT **<<PK, FK>>**
+  * hechoFactura_ubicacionVendedor_id: INT **<<PK, FK>>**
   --
     * hechoFactura_porcentajeFacturacion: DECIMAL(18, 2)
     * hechoFactura_montoFacturado: DECIMAL(18, 2)
@@ -231,8 +231,9 @@ hecho_factura -- "ubicacion    "
 '----------------------------------
 
 entity "hecho_envio" {
-  * hechoEnvio_tiempo_id: INT **<<FK>>**
-  * hechoEnvio_ubicacionAlmacen_id: INT **<<FK>>**
+  * hechoEnvio_tiempo_id: INT **<<PK, FK>>**
+  * hechoEnvio_ubicacionAlmacen_id: INT **<<PK, FK>>**
+  * hechoEnvio_tipoEnvio_id: INT **<<PK, FK>>**
   --
     * concepto_porcentajeCumplimiento: DECIMAL(18, 2)
 }
@@ -268,7 +269,7 @@ hecho_envio -- "tipo_envio"
 '----------------------------------
 
 entity "hecho_localidad" {
-  * hechoLocalidad_ubicacionCliente_id: INT **<<FK>>**
+  * hechoLocalidad_ubicacionCliente_id: INT **<<PK, FK>>**
   --
     * hechoLocalidad_costoEnvio: DECIMAL(18, 2)
 }
