@@ -24,11 +24,14 @@
 
 entity "hecho_venta" {
   * hechoVenta_tiempo_id: INT **<<PK, FK>>**
-  * hechoVenta_rangoHorario_id: INT **<<PK, FK>>**
   * hechoVenta_ubicacionAlmacen_id: INT **<<PK, FK>>**
+  * hechoVenta_ubicacionCliente_id: INT **<<PK, FK>>**
+  * hechoVenta_rubro_id: INT **<<PK, FK>>**
+  * hechoVenta_rangoEtario_id: INT **<<PK, FK>>**
   --
-    * hechoVenta_valorPromedio: DECIMAL(10, 2)
+    * hechoVenta_valorPromedio: DECIMAL(18, 2)
     * hechoVenta_cantidadVentas: INT
+    * hechoRubro_totalVentas: DECIMAL(18, 2)
 }
 
 entity "tiempo" {
@@ -46,37 +49,6 @@ entity "ubicacion" {
     * ubicacion_provincia: NVARCHAR(50)
 }
 
-entity "rango_horario" {
-  * rangoHorario_id: INT **<<PK>>**
-  --
-    * rangoHorario_nombre: NVARCHAR(9)
-}
-note bottom
-    Rangos horarios: 
-        - MADRUGADA: 00:00 - 06:00
-        - MAÑANA: 06:00 - 12:00
-        - TARDE: 12:00 - 18:00
-        - NOCHE: 18:00 - 24:00 
-end note
-
-hecho_venta -- "tiempo"
-hecho_venta -- "ubicacion"
-hecho_venta -- "rango_horario"
-
-
-'----------------------------------
-'---------- HECHO RUBRO -----------
-'----------------------------------
-
-entity "hecho_rubro" {
-  * hechoRubro_ubicacionCliente_id: INT **<<PK, FK>>**
-  * hechoRubro_rangoEtarioCliente_id: INT **<<PK, FK>>**
-  * hechoRubro_tiempo_id: INT **<<PK, FK>>**
-  --
-    * hechoRubro_nombre: NVARCHAR(50)
-    * hechoRubro_cantidadVentas: INT
-}
-
 entity "rango_etario_cliente" {
   * rangoEtarioCliente_id: INT **<<PK>>**
   --
@@ -90,24 +62,16 @@ note bottom
         - ADULTEZ_AVANZADA: > 50
 end note
 
-entity "tiempo " {
-  * tiempo_id: INT **<<PK>>**
-  --
-    * tiempo_anio: INT  
-    * tiempo_cuatrimestre: INT
-    * tiempo_mes: INT
+
+entity "rubro" {
+  * rubbro_id: INT **<<PK>>**
+    * hechoRubro_nombre: NVARCHAR(50)
 }
 
-entity "ubicacion " {
-  * ubicacion_id: INT **<<PK>>**
-  --
-    * ubicacion_localidad: NVARCHAR(50)
-    * ubicacion_provincia: NVARCHAR(50)
-}
-
-hecho_rubro -- "tiempo "
-hecho_rubro -- "ubicacion "
-hecho_rubro -- "rango_etario_cliente"
+hecho_venta -- "tiempo"
+hecho_venta -- "ubicacion"
+hecho_venta -- "rango_etario_cliente"
+hecho_venta -- "rubro"
 
 
 '----------------------------------
@@ -120,7 +84,7 @@ entity "hecho_publicacion" {
   * hechoPublicacion_marca_id: INT **<<PK, FK>>**
   --
     * hechoPublicacion_diasPromedioVigente: DECIMAL(10, 2)
-    * hechoPublicacion_cantidadStockPromedio: DECIMAL(10, 2)
+    * hechoPublicacion_cantidadStockPromedio: DECIMAL(18, 2)
 }
 
 entity "subrubro" {
@@ -136,7 +100,7 @@ entity "marca" {
     * marca_nombre: NVARCHAR(50)
 }
 
-entity "tiempo  " {
+entity "tiempo " {
   * tiempo_id: INT **<<PK>>**
   --
     * tiempo_anio: INT  
@@ -144,7 +108,7 @@ entity "tiempo  " {
     * tiempo_mes: INT
 }
 
-hecho_publicacion -- "tiempo  "
+hecho_publicacion -- "tiempo "
 hecho_publicacion -- "subrubro"
 hecho_publicacion -- "marca"
 

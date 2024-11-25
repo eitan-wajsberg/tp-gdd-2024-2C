@@ -83,7 +83,7 @@ entity "venta" {
   --
     * venta_cliente_id: INT **<<FK>>**
     * venta_fecha: DATETIME
-    * venta_total: DECIMAL(10, 2)
+    * venta_total: DECIMAL(18, 2)
 }
 
 entity "detalle_venta" {

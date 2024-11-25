@@ -205,7 +205,7 @@ CREATE TABLE NJRE.venta (
     venta_id DECIMAL(18, 0) NOT NULL,  -- Posee un código en la tabla maestra
     venta_cliente_id INT NOT NULL, 
     venta_fecha DATETIME NOT NULL,
-    venta_total DECIMAL(10, 2) NOT NULL
+    venta_total DECIMAL(18, 2) NOT NULL
 );
 
 CREATE TABLE NJRE.detalle_venta (
