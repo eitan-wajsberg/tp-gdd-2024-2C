@@ -1,31 +1,13 @@
 @startuml  diagrama-entidad-relacion-BI.
 
-/'
-    Aclaraciones:
-        - Considere no poner la palabra "dimensión" en los nombres de las tablas (por ejemplo, usar solo "tiempo" en lugar de "dimensión_tiempo"). Esto hace los nombres más cortos y claros. Además, el diagrama permite identificar fácilmente qué tablas son hechos y cuáles son dimensiones.
-
-        - La consigna dice: "Se deberán considerar como mínimo las siguientes dimensiones, además de las que el alumno considere convenientes." Por eso, probablemente tengamos que agregar más dimensiones o hechos, o tal vez más atributos en algunas dimensiones.
-
-        - Para avanzar, usé:
-            - https://raw.githubusercontent.com/sebastiangilberto/utn-gdd-2c2022-tp/main/tp/der/der_BI.svg
-            - Las diapositivas del profesor sobre el modelo de estrella, OLAP y DataWarehouse.
-
-        - No estoy seguro sobre el rango horario y el rango etario. Puede que queden bien como están, tener un atributo para cada tipo o quizas se les ocurra otra idea.
-
-        - Acuerdense de que los tipos datos deben ser los mismos de la tabla principal: "Todas las columnas creadas para las nuevas tablas deberán respetar los mismos tipos de datos de las columnas existentes en la tabla maestra."
-
-        - Tengo dudas sobre si el "producto" debería ser un hecho o una dimensión, o si puede ser ambas cosas en distintas tablas. La misma duda tengo con "publicación".
-'/
-
-
 '----------------------------------
 '---------- HECHO VENTA -----------
 '----------------------------------
 
 entity "hecho_venta" {
   * hechoVenta_tiempo_id: INT **<<PK, FK>>**
-  * hechoVenta_ubicacionAlmacen_id: INT **<<PK, FK>>**
-  * hechoVenta_ubicacionCliente_id: INT **<<PK, FK>>**
+  * hechoVenta_provinciaAlmacen_id: NCHAR(2) **<<PK, FK>>**
+  * hechoVenta_localidadCliente_id: INT **<<PK, FK>>**
   * hechoVenta_rubro_id: INT **<<PK, FK>>**
   * hechoVenta_rangoEtario_id: INT **<<PK, FK>>**
   --
@@ -41,13 +23,16 @@ entity "tiempo" {
     * tiempo_mes: INT
 }
 
-entity "ubicacion" {
-  * ubicacion_id: INT **<<PK>>**
+entity "provincia"{
+  * provincia_id: NCHAR(2) **<<PK>>**
   --
-    * ubicacion_localidad_id: INT
-    * ubicacion_localidad_nombre: NVARCHAR(50)
-    * ubicacion_provincia _id: CHAR(2)
-    * ubicacion_provincia_nombre: NVARCHAR(50)
+    * provincia_nombre: NVARCHAR(50)
+}
+
+entity "localidad" {
+  * localidad_id: INT **<<PK>>**
+  --
+    * localidad_nombre: NVARCHAR(50) 
 }
 
 entity "rango_etario_cliente" {
@@ -70,7 +55,8 @@ entity "rubro" {
 }
 
 hecho_venta -- "tiempo"
-hecho_venta -- "ubicacion"
+hecho_venta -- "localidad"
+hecho_venta -- "provincia"
 hecho_venta -- "rango_etario_cliente"
 hecho_venta -- "rubro"
 
@@ -121,7 +107,7 @@ hecho_publicacion -- "marca"
 entity "hecho_pago" {
   * hechoPago_tipoMedioPago_id: INT **<<PK, FK>>**
   * hechoPago_tiempo_id: INT **<<PK, FK>>**
-  * hechoPago_ubicacionCliente_id: INT **<<PK, FK>>**
+  * hechoPago_localidadCliente_id: INT **<<PK, FK>>**
   * hechoPago_cuota_id: INT **<<PK, FK>>**
   --
     * hechoPago_importeTotalCuotas: DECIMAL(18, 2)
@@ -147,16 +133,15 @@ entity "tiempo   " {
     * tiempo_mes: INT
 }
 
-entity "ubicacion  " {
-  * ubicacion_id: INT **<<PK>>**
+entity "localidad " {
+  * localidad_id: INT **<<PK>>**
   --
-    * ubicacion_localidad: NVARCHAR(50)
-    * ubicacion_provincia: NVARCHAR(50)
+    * localidad_nombre: NVARCHAR(50) 
 }
 
 hecho_pago -- "tipo_medio_pago"
 hecho_pago -- "tiempo   "
-hecho_pago -- "ubicacion  "
+hecho_pago -- "localidad "
 hecho_pago -- "cuota"
 
 
@@ -167,7 +152,7 @@ hecho_pago -- "cuota"
 entity "hecho_factura" {
   * hechoFactura_tiempo_id: INT **<<PK, FK>>**
   * hechoFactura_concepto_id: INT **<<PK, FK>>**
-  * hechoFactura_ubicacionVendedor_id: INT **<<PK, FK>>**
+  * hechoFactura_provinciaVendedor_id: NCHAR(2) **<<PK, FK>>**
   --
     * hechoFactura_porcentajeFacturacion: DECIMAL(18, 2)
     * hechoFactura_montoFacturado: DECIMAL(18, 2)
@@ -187,16 +172,15 @@ entity "tiempo     " {
     * tiempo_mes: INT
 }
 
-entity "ubicacion    " {
-  * ubicacion_id: INT **<<PK>>**
+entity "provincia "{
+  * provincia_id: NCHAR(2) **<<PK>>**
   --
-    * ubicacion_localidad: NVARCHAR(50)
-    * ubicacion_provincia: NVARCHAR(50)
+    * provincia_nombre: NVARCHAR(50)
 }
 
 hecho_factura -- "tiempo     "
 hecho_factura -- "concepto"
-hecho_factura -- "ubicacion    "
+hecho_factura -- "provincia "
 
 
 '----------------------------------
@@ -205,8 +189,8 @@ hecho_factura -- "ubicacion    "
 
 entity "hecho_envio" {
   * hechoEnvio_tiempo_id: INT **<<PK, FK>>**
-  * hechoVenta_ubicacionAlmacen_id: INT **<<PK, FK>>**
-  * hechoVenta_ubicacionCliente_id: INT **<<PK, FK>>**
+  * hechoVenta_provinciaAlmacen_id: NCHAR(2) **<<PK, FK>>**
+  * hechoVenta_localidadCliente_id: INT **<<PK, FK>>**
   * hechoEnvio_tipoEnvio_id: INT **<<PK, FK>>**
   --
     * hechoEnvio_cantidadEnvios: DECIMAL(18, 0)
@@ -223,11 +207,16 @@ entity "tiempo      " {
     * tiempo_mes: INT
 }
 
-entity "ubicacion     " {
-  * ubicacion_id: INT **<<PK>>**
+entity "provincia  "{
+  * provincia_id: NCHAR(2) **<<PK>>**
   --
-    * ubicacion_localidad: NVARCHAR(50)
-    * ubicacion_provincia: NVARCHAR(50)
+    * provincia_nombre: NVARCHAR(50)
+}
+
+entity "localidad  " {
+  * localidad_id: INT **<<PK>>**
+  --
+    * localidad_nombre: NVARCHAR(50) 
 }
 
 entity "tipo_envio" {
@@ -237,7 +226,8 @@ entity "tipo_envio" {
 }
 
 hecho_envio -- "tiempo      "
-hecho_envio -- "ubicacion     "
+hecho_envio -- "provincia  "
+hecho_envio -- "localidad  "
 hecho_envio -- "tipo_envio"
 
 @enduml 
