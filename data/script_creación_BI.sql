@@ -572,9 +572,9 @@ BEGIN
 		INNER JOIN NJRE.cliente c ON c.cliente_id = v.venta_cliente_id
 		INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, venta_fecha) and tiempo_mes = DATEPART(month, venta_fecha)
         INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
-		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad and ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
+		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad AND ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
 		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
-		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad and ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
+		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad AND ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
 	GROUP BY tiempo_id, ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id, s.subrubro_rubro_id, NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento);  
 END
 GO
@@ -587,22 +587,22 @@ BEGIN
     INSERT INTO NJRE.BI_hecho_envio 
     (hechoEnvio_tiempo_id, hechoEnvio_ubicacionAlmacen_id, hechoEnvio_ubicacionCliente_id, hechoEnvio_tipoEnvio_id, hechoEnvio_cantidadEnvios, hechoEnvio_totalEnviosCumplidos, hechoEnvio_totalEnviosNoCumplidos, hechoEnvio_totalCostoEnvio)
     SELECT 
-        NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada) AS tiempo_id,
+        NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada),
         ubiAlmacen.ubicacion_id, 
 		ubiCliente.ubicacion_id,
         e.envio_tipoEnvio_id,
         COUNT(DISTINCT e.envio_id),
-        SUM(CASE WHEN e.envio_estado = 'Entregado' THEN e.envio_costo ELSE 0 END) AS totalEnviosCumplidos,
-        SUM(CASE WHEN e.envio_estado <> 'Entregado' THEN e.envio_costo ELSE 0 END) AS totalEnviosNoCumplidos,
+        SUM(CASE WHEN e.envio_estado = 'Entregado' THEN e.envio_costo ELSE 0 END),
+        SUM(CASE WHEN e.envio_estado <> 'Entregado' THEN e.envio_costo ELSE 0 END),
         SUM(e.envio_costo) AS totalCostoEnvio
     FROM NJRE.envio e
 		INNER JOIN NJRE.detalle_venta dv ON dv.detalleVenta_venta_id = e.envio_venta_id
 		INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
 		INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
 		INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
-		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad and ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
+		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad AND ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
 		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
-		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad and ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
+		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad AND ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
     GROUP BY 
         NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada), 
         ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id,
@@ -625,7 +625,7 @@ EXEC NJRE.BI_migrar_subrubro;
 EXEC NJRE.BI_migrar_marca;
 EXEC NJRE.BI_migrar_tipoEnvio;
 EXEC NJRE.BI_migrar_tipoMedioPago;
-EXEC NJRE.BI_migrar_concepto; -- por alguna razon que desconozco no ejecuta bien
+EXEC NJRE.BI_migrar_concepto;
 
 -- Hechos
 
