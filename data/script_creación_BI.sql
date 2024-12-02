@@ -581,11 +581,11 @@ GO
 CREATE PROCEDURE NJRE.BI_migrar_hechoEnvio AS
 BEGIN
     INSERT INTO NJRE.BI_hecho_envio 
-    (hechoEnvio_tiempo_id, hechoEnvio_ubicacionAlmacen_id, hechoEnvio_ubicacionCliente_id, hechoEnvio_tipoEnvio_id, hechoEnvio_cantidadEnvios, hechoEnvio_totalEnviosCumplidos, hechoEnvio_totalEnviosNoCumplidos, hechoEnvio_totalCostoEnvio)
+    (hechoEnvio_tiempo_id, hechoEnvio_provinciaAlmacen_id, hechoEnvio_localidadCliente_id, hechoEnvio_tipoEnvio_id, hechoEnvio_cantidadEnvios, hechoEnvio_totalEnviosCumplidos, hechoEnvio_totalEnviosNoCumplidos, hechoEnvio_totalCostoEnvio)
     SELECT 
         NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada),
-        ubiAlmacen.ubicacion_id, 
-		ubiCliente.ubicacion_id,
+        domAlmacen.domicilio_provincia, 
+		domCliente.domicilio_localidad,
         e.envio_tipoEnvio_id,
         COUNT(DISTINCT e.envio_id),
         SUM(CASE WHEN e.envio_estado = 'Entregado' THEN e.envio_costo ELSE 0 END),
@@ -596,12 +596,11 @@ BEGIN
 		INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
 		INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
 		INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
-		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad AND ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
 		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
-		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad AND ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
     GROUP BY 
         NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada), 
-        ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id,
+        domAlmacen.domicilio_provincia, 
+		domCliente.domicilio_localidad,
         e.envio_tipoEnvio_id
 END
 GO
@@ -675,13 +674,13 @@ IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL
     DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
 GO 
 CREATE VIEW NJRE.BI_porcentajeCumplimientoEnvios AS
-SELECT DISTINCT ubicacion_provincia_nombre, tiempo_anio, tiempo_mes, 
+SELECT DISTINCT provincia_nombre, tiempo_anio, tiempo_mes, 
 	CASE 
 		WHEN hechoEnvio_totalEnviosCumplidos = 0 THEN 0
 		ELSE hechoEnvio_cantidadEnvios * 1.0 / hechoEnvio_totalEnviosCumplidos 
     END porcentajeCumplimiento
 FROM NJRE.BI_hecho_envio he
-	INNER JOIN NJRE.BI_ubicacion u ON u.ubicacion_id = he.hechoEnvio_ubicacionAlmacen_id
+	INNER JOIN NJRE.BI_provincia p ON p.provincia_id = he.hechoEnvio_provinciaAlmacen_id
 	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id;
 GO
 
@@ -690,8 +689,8 @@ IF OBJECT_ID('NJRE.BI_localidadesConMayorCostoEnvio') IS NOT NULL
     DROP VIEW NJRE.BI_localidadesConMayorCostoEnvio
 GO 
 CREATE VIEW NJRE.BI_localidadesConMayorCostoEnvio AS
-SELECT TOP 5 ubicacion_localidad_nombre, he.hechoEnvio_totalCostoEnvio
-FROM NJRE.BI_hecho_envio he INNER JOIN NJRE.BI_ubicacion u ON u.ubicacion_id = he.hechoEnvio_ubicacionCliente_id
+SELECT TOP 5 localidad_nombre, he.hechoEnvio_totalCostoEnvio
+FROM NJRE.BI_hecho_envio he INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
 ORDER BY he.hechoEnvio_totalCostoEnvio DESC;
 
 -- Vista 9
