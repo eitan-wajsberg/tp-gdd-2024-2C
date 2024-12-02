@@ -656,14 +656,22 @@ IF OBJECT_ID('NJRE.BI_rendimientoDeRubros') IS NOT NULL
     DROP VIEW NJRE.BI_rendimientoDeRubros
 GO 
 CREATE VIEW NJRE.BI_rendimientoDeRubros AS
-SELECT TOP 5 tiempo_anio, tiempo_cuatrimestre, localidad_nombre, rangoEtarioCliente_nombre, rubro_id, rubro_nombre
+SELECT tiempo_anio, tiempo_cuatrimestre, localidad_nombre, rangoEtarioCliente_nombre, rubro_id, rubro_nombre
 FROM NJRE.BI_hecho_venta
 	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoVenta_tiempo_id
 	INNER JOIN NJRE.BI_rubro on rubro_id = hechoVenta_rubro_id
 	INNER JOIN NJRE.BI_localidad on localidad_id = hechoVenta_localidadCliente_id
 	INNER JOIN NJRE.BI_rango_etario_cliente on rangoEtarioCliente_id= hechoVenta_rangoEtarioCliente_id
+WHERE rubro_id in (
+	SELECT TOP 5 hechoVenta_rubro_id 
+	FROM NJRE.BI_hecho_venta 
+	WHERE hechoVenta_tiempo_id = tiempo_id
+		and hechoVenta_localidadCliente_id = localidad_id
+		and hechoVenta_rangoEtarioCliente_id = rangoEtarioCliente_id
+	GROUP BY hechoVenta_rubro_id
+	ORDER BY sum(hechoVenta_totalVentas) desc
+	)
 GROUP BY tiempo_anio, tiempo_cuatrimestre, localidad_id, localidad_nombre, hechoVenta_rangoEtarioCliente_id, rangoEtarioCliente_nombre, rubro_id, rubro_nombre
-ORDER BY sum(hechoVenta_totalVentas)
 GO
 
 -- Vista 6
