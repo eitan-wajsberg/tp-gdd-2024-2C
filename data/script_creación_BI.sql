@@ -89,6 +89,7 @@ BEGIN
 END
 GO 
 
+
 -------------------------------------------------------------------------------------------------
 -- ELIMINACION DE TABLAS, FKS Y PROCEDURES
 -------------------------------------------------------------------------------------------------
@@ -98,6 +99,7 @@ EXEC NJRE.BI_borrar_tablas;
 EXEC NJRE.BI_borrar_procedimientos;
 
 GO
+
 
 -------------------------------------------------------------------------------------------------
 -- CREACION DE TABLAS
@@ -211,6 +213,7 @@ CREATE TABLE NJRE.BI_cuota (
     cuota_id INT IDENTITY(1,1),
     cuota_cantidad DECIMAL(18,0) NOT NULL
 );
+
 
 -------------------------------------------------------------------------------------------------
 -- CREACION DE PRIMARY KEYS
@@ -340,7 +343,6 @@ AS
     END
 GO
 
-
 IF OBJECT_ID('NJRE.BI_obtener_tiempo_cuatrimestre') IS NOT NULL 
     DROP FUNCTION NJRE.BI_obtener_tiempo_cuatrimestre;
 GO
@@ -391,6 +393,7 @@ BEGIN
     RETURN @idRangoEtario;
 END;
 GO
+
 
 -------------------------------------------------------------------------------------------------
 -- PROCEDURES PARA LA MIGRACION DE DATOS
@@ -616,7 +619,6 @@ GO
 -------------------------------------------------------------------------------------------------
 
 -- Dimensiones
-
 EXEC NJRE.BI_migrar_rubro;
 EXEC NJRE.BI_migrar_tiempo;
 EXEC NJRE.BI_migrar_ubicacion;
@@ -628,14 +630,13 @@ EXEC NJRE.BI_migrar_tipoMedioPago;
 EXEC NJRE.BI_migrar_concepto;
 
 -- Hechos
-
 EXEC NJRE.BI_migrar_hechoVenta;
 EXEC NJRE.BI_migrar_hechoEnvio;
 -- EXEC NJRE.BI_migrar_hechoPublicacion;
 -- EXEC NJRE.BI_migrar_hechoPago;
 -- EXEC NJRE.BI_migrar_hechoFactura;
-
 GO
+
 
 -------------------------------------------------------------------------------------------------
 -- VISTAS
@@ -643,6 +644,7 @@ GO
 
 -- Vista 1
 -- Vista 2
+
 -- Vista 3
 IF OBJECT_ID('NJRE.BI_ventaPromedioMensual') IS NOT NULL 
     DROP VIEW NJRE.BI_ventaPromedioMensual
@@ -670,11 +672,11 @@ GROUP BY tiempo_anio, tiempo_cuatrimestre, ubicacion_localidad_id, ubicacion_loc
 ORDER BY sum(hechoVenta_totalVentas)
 GO
 
--- Vista 5
 -- Vista 6
 
 -- Vista 7 
 -- REVISAR: Todos tienen porcentaje de cumplimiento 0 ya que ningun envio fue entregado, todos estan programados desde 2025 en adelante
+-- REVISAR: Cuando avisaron que no se puede usar distinct, era aca en las vistas o en la migracion de los hechos?
 IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL 
     DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
 GO 
