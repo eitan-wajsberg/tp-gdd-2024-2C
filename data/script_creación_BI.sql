@@ -82,26 +82,21 @@ GO
 
 CREATE TABLE NJRE.BI_hecho_venta (
     hechoVenta_tiempo_id INT NOT NULL,
-    hechoVenta_rangoHorario_id INT NOT NULL,
     hechoVenta_ubicacionAlmacen_id INT NOT NULL,
-    hechoVenta_valorPromedio DECIMAL(10, 2) NOT NULL,
-    hechoVenta_cantidadVentas INT NOT NULL
-);
-
-CREATE TABLE NJRE.BI_hecho_rubro (
-    hechoRubro_ubicacionCliente_id INT NOT NULL,
-    hechoRubro_rangoEtarioCliente_id INT NOT NULL,
-    hechoRubro_tiempo_id INT NOT NULL,
-    hechoRubro_nombre NVARCHAR(50) NOT NULL,
-    hechoRubro_cantidadVentas INT NOT NULL
+    hechoVenta_ubicacionCliente_id INT NOT NULL,
+    hechoVenta_rubro_id INT NOT NULL,
+    hechoVenta_rangoEtarioCliente_id INT NOT NULL,
+    hechoVenta_cantidadVentas DECIMAL(18, 0) NOT NULL,
+    hechoRubro_totalVentas DECIMAL(18, 2) NOT NULL
 );
 
 CREATE TABLE NJRE.BI_hecho_publicacion (
     hechoPublicacion_tiempo_id INT NOT NULL,
     hechoPublicacion_subrubro_id INT NOT NULL,
     hechoPublicacion_marca_id INT NOT NULL,
-    hechoPublicacion_diasPromedioVigente DECIMAL(10, 2) NOT NULL,
-    hechoPublicacion_cantidadStockPromedio DECIMAL(10, 2) NOT NULL
+    hechoPublicacion_totalDiasPublicaciones DECIMAL(18, 0) NOT NULL,
+    hechoPublicacion_cantidadStockTotal DECIMAL(18, 0) NOT NULL,
+	hechoPublicacion_cantidadPublicaciones DECIMAL(18	, 2) NOT NULL,
 );
 
 CREATE TABLE NJRE.BI_hecho_pago (
@@ -122,32 +117,30 @@ CREATE TABLE NJRE.BI_hecho_factura (
 CREATE TABLE NJRE.BI_hecho_envio (
     hechoEnvio_tiempo_id INT NOT NULL,
     hechoEnvio_ubicacionAlmacen_id INT NOT NULL,
+    hechoEnvio_ubicacionCliente_id INT NOT NULL,
     hechoEnvio_tipoEnvio_id INT NOT NULL,
-    concepto_porcentajeCumplimiento DECIMAL(18, 2)
-);
-
-CREATE TABLE NJRE.BI_hecho_localidad (
-    hechoLocalidad_ubicacionCliente_id INT NOT NULL,
-    hechoLocalidad_costoEnvio DECIMAL(18, 2) NOT NULL
+    hechoEnvio_cantidadEnvios DECIMAL(18, 0) NOT NULL,
+    hechoEnvio_totalEnviosCumplidos DECIMAL(18, 0) NOT NULL,
+    hechoEnvio_totalEnviosNoCumplidos DECIMAL(18, 0) NOT NULL,
+    hechoEnvio_totalCostoEnvio DECIMAL(18, 2) NOT NULL
 );
 
 
 -- Dimensiones
-
-CREATE TABLE NJRE.BI_rango_horario (
-    rangoHorario_id INT IDENTITY(1, 1),
-    rangoHorario_nombre NVARCHAR(9) NOT NULL
-);
 
 CREATE TABLE NJRE.BI_rango_etario_cliente (
     rangoEtarioCliente_id INT IDENTITY(1, 1),
     rangoEtarioCliente_nombre NVARCHAR(16) NOT NULL
 );
 
+CREATE TABLE NJRE.BI_rubro (
+    rubro_id INT IDENTITY(1, 1),
+    rubro_nombre NVARCHAR(50) NOT NULL
+);
+
 CREATE TABLE NJRE.BI_subrubro (
     subrubro_id INT IDENTITY(1, 1),
-    subrubro_rubro NVARCHAR(50) NOT NULL,
-    subrubro_subrubro NVARCHAR(50) NOT NULL
+    subrubro_descripcion NVARCHAR(50) NOT NULL
 );
 
 CREATE TABLE NJRE.BI_marca (
@@ -179,8 +172,15 @@ CREATE TABLE NJRE.BI_tiempo (
 
 CREATE TABLE NJRE.BI_ubicacion (
     ubicacion_id INT IDENTITY(1,1),
-    ubicacion_localidad NVARCHAR(50) NOT NULL,
-    ubicacion_provincia NVARCHAR(50) NOT NULL
+    ubicacion_localidad_id INT NOT NULL,
+    ubicacion_localidad_nombre NVARCHAR(50) NOT NULL,
+    ubicacion_provincia_id CHAR(2) NOT NULL,
+    ubicacion_provincia_nombre NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE NJRE.BI_cuota (
+    cuota_id INT IDENTITY(1,1),
+    cuota_cantidad DECIMAL(18,0) NOT NULL
 );
 
 
