@@ -45,8 +45,10 @@ entity "tiempo" {
 entity "ubicacion" {
   * ubicacion_id: INT **<<PK>>**
   --
-    * ubicacion_localidad: NVARCHAR(50)
-    * ubicacion_provincia: NVARCHAR(50)
+    * ubicacion_localidad_id: INT
+    * ubicacion_localidad_nombre: NVARCHAR(50)
+    * ubicacion_provincia _id: CHAR(2)
+    * ubicacion_provincia_nombre: NVARCHAR(50)
 }
 
 entity "rango_etario_cliente" {
