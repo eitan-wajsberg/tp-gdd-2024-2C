@@ -109,7 +109,7 @@ GO
 
 CREATE TABLE NJRE.BI_hecho_venta (
     hechoVenta_tiempo_id INT NOT NULL,
-    hechoVenta_provinciaAlmacen_id INT NOT NULL,
+    hechoVenta_provinciaAlmacen_id NCHAR(2) NOT NULL,
     hechoVenta_localidadCliente_id INT NOT NULL,
     hechoVenta_rubro_id INT NOT NULL,
     hechoVenta_rangoEtarioCliente_id INT NOT NULL,
@@ -137,14 +137,14 @@ CREATE TABLE NJRE.BI_hecho_pago (
 CREATE TABLE NJRE.BI_hecho_factura (
     hechoFactura_tiempo_id INT NOT NULL,
     hechoFactura_concepto_id INT NOT NULL,
-    hechoFactura_provinciaVendedor_id INT NOT NULL,
+    hechoFactura_provinciaVendedor_id NCHAR(2) NOT NULL,
     hechoFactura_porcentajeFacturacion DECIMAL(18, 2) NOT NULL,
     hechoFactura_montoFacturado DECIMAL(18, 2) NOT NULL
 );
 
 CREATE TABLE NJRE.BI_hecho_envio (
     hechoEnvio_tiempo_id INT NOT NULL,
-    hechoEnvio_provinciaAlmacen_id INT NOT NULL,
+    hechoEnvio_provinciaAlmacen_id NCHAR(2) NOT NULL,
     hechoEnvio_localidadCliente_id INT NOT NULL,
     hechoEnvio_tipoEnvio_id INT NOT NULL,
     hechoEnvio_cantidadEnvios DECIMAL(18, 0) NOT NULL,
@@ -409,10 +409,11 @@ IF OBJECT_ID('NJRE.BI_migrar_localidad') IS NOT NULL
 GO 
 CREATE PROCEDURE NJRE.BI_migrar_localidad AS
 BEGIN
-    INSERT INTO NJRE.BI_localidad (localidad_id, localidad_nombre)
-	SELECT localidad_id, localidad_nombre
+    INSERT INTO NJRE.BI_localidad (localidad_nombre)
+	SELECT localidad_nombre
 	FROM NJRE.localidad
 END
+GO
 
 IF OBJECT_ID('NJRE.BI_migrar_provincia') IS NOT NULL 
     DROP PROCEDURE NJRE.BI_migrar_provincia
@@ -423,6 +424,7 @@ BEGIN
 	SELECT provincia_id, provincia_nombre
 	FROM NJRE.provincia
 END
+GO
 
 IF OBJECT_ID('NJRE.BI_migrar_rubro') IS NOT NULL 
     DROP PROCEDURE NJRE.BI_migrar_rubro
@@ -549,11 +551,11 @@ GO
 CREATE PROCEDURE NJRE.BI_migrar_hechoVenta AS
 BEGIN
 	INSERT INTO NJRE.BI_hecho_venta
-	(hechoVenta_tiempo_id, hechoVenta_ubicacionAlmacen_id, hechoVenta_ubicacionCliente_id, hechoVenta_rubro_id, hechoVenta_rangoEtarioCliente_id, hechoVenta_cantidadVentas, hechoVenta_totalVentas)
+	(hechoVenta_tiempo_id, hechoVenta_provinciaAlmacen_id, hechoVenta_localidadCliente_id, hechoVenta_rubro_id, hechoVenta_rangoEtarioCliente_id, hechoVenta_cantidadVentas, hechoVenta_totalVentas)
 	SELECT 
 		tiempo_id,
-		ubiAlmacen.ubicacion_id,
-		ubiCliente.ubicacion_id,
+		domAlmacen.domicilio_provincia,
+		domCliente.domicilio_localidad,
 		s.subrubro_rubro_id,
 		NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento),
 		COUNT(DISTINCT venta_id),
@@ -568,10 +570,8 @@ BEGIN
 		INNER JOIN NJRE.cliente c ON c.cliente_id = v.venta_cliente_id
 		INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, venta_fecha) and tiempo_mes = DATEPART(month, venta_fecha)
         INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
-		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad AND ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
 		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
-		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad AND ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
-	GROUP BY tiempo_id, ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id, s.subrubro_rubro_id, NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento);  
+	GROUP BY tiempo_id, domAlmacen.domicilio_provincia, domCliente.domicilio_localidad, s.subrubro_rubro_id, NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento);  
 END
 GO
 
@@ -614,7 +614,8 @@ GO
 -- Dimensiones
 EXEC NJRE.BI_migrar_rubro;
 EXEC NJRE.BI_migrar_tiempo;
-EXEC NJRE.BI_migrar_ubicacion;
+EXEC NJRE.BI_migrar_localidad;
+EXEC NJRE.BI_migrar_provincia;
 EXEC NJRE.BI_migrar_rangoEtarioCliente;
 EXEC NJRE.BI_migrar_subrubro;
 EXEC NJRE.BI_migrar_marca;
