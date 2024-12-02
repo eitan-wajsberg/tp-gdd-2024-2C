@@ -362,6 +362,36 @@ BEGIN
 END;
 GO
 
+IF OBJECT_ID('NJRE.BI_obtener_rangoEtario_id') IS NOT NULL 
+    DROP FUNCTION NJRE.BI_obtener_rangoEtario_id;
+GO
+CREATE FUNCTION NJRE.BI_obtener_rangoEtario_id(@fecha DATE) 
+RETURNS INT 
+AS 
+BEGIN
+    DECLARE @idRangoEtario INT;
+    DECLARE @edad INT;
+
+    -- Calcular la edad basada en el año actual
+    SET @edad = DATEDIFF(YEAR, @fecha, GETDATE()) - 
+		CASE 
+			WHEN MONTH(@fecha) > MONTH(GETDATE()) OR (MONTH(@fecha) = MONTH(GETDATE()) AND DAY(@fecha) > DAY(GETDATE())) 
+			THEN 1 
+			ELSE 0 
+    END;
+
+    SET @idRangoEtario = CASE 
+        WHEN @edad < 25 THEN 1 
+        WHEN @edad BETWEEN 25 AND 35 THEN 2  
+        WHEN @edad BETWEEN 36 AND 50 THEN 3
+        WHEN @edad > 50 THEN 4 
+        ELSE NULL
+    END;
+
+    RETURN @idRangoEtario;
+END;
+GO
+
 -------------------------------------------------------------------------------------------------
 -- PROCEDURES PARA LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
@@ -461,6 +491,7 @@ BEGIN
     SELECT DISTINCT tipoMedioPago_nombre
     FROM NJRE.tipo_medio_pago 
 END
+GO
 
 IF OBJECT_ID('NJRE.BI_migrar_concepto') IS NOT NULL 
     DROP PROCEDURE NJRE.BI_migrar_concepto
@@ -471,7 +502,7 @@ BEGIN
     SELECT DISTINCT concepto_nombre
     FROM NJRE.concepto 
 END 
-
+GO
 
 -- Hechos
 
@@ -528,8 +559,8 @@ BEGIN
 		ubiAlmacen.ubicacion_id,
 		ubiCliente.ubicacion_id,
 		s.subrubro_rubro_id,
-		NJRE.BI_obtener_rangoEtario(c.cliente_fecha_nacimiento),
-		count(DISTINCT venta_id),
+		NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento),
+		COUNT(DISTINCT venta_id),
 		SUM(dv.detalleVenta_cantidad)
 	FROM NJRE.venta v
         INNER JOIN NJRE.detalle_venta dv ON v.venta_id = dv.detalleVenta_venta_id
@@ -539,12 +570,12 @@ BEGIN
 		INNER JOIN NJRE.producto pr ON pr.producto_id = p.publicacion_producto_id
 		INNER JOIN NJRE.subrubro s ON s.subrubro_id = pr.producto_subrubro_id
 		INNER JOIN NJRE.cliente c ON c.cliente_id = v.venta_cliente_id
-		INNER JOIN NJRE.BI_tiempo ON tiempo_anio = datepart(year, venta_fecha) and tiempo_mes = datepart(month, venta_fecha)
+		INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, venta_fecha) and tiempo_mes = DATEPART(month, venta_fecha)
         INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
 		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad and ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
 		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
 		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad and ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
-	GROUP BY tiempo_id, ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id, s.subrubro_rubro_id, NJRE.BI_obtener_rangoEtario(c.cliente_fecha_nacimiento);  
+	GROUP BY tiempo_id, ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id, s.subrubro_rubro_id, NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento);  
 END
 GO
 
@@ -594,7 +625,7 @@ EXEC NJRE.BI_migrar_subrubro;
 EXEC NJRE.BI_migrar_marca;
 EXEC NJRE.BI_migrar_tipoEnvio;
 EXEC NJRE.BI_migrar_tipoMedioPago;
--- EXEC NJRE.BI_migrar_concepto;
+EXEC NJRE.BI_migrar_concepto;
 
 -- Hechos
 
@@ -605,7 +636,6 @@ EXEC NJRE.BI_migrar_hechoEnvio;
 -- EXEC NJRE.BI_migrar_hechoFactura;
 
 GO
-
 
 -------------------------------------------------------------------------------------------------
 -- VISTAS
