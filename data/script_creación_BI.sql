@@ -112,7 +112,7 @@ CREATE TABLE NJRE.BI_hecho_venta (
     hechoVenta_rubro_id INT NOT NULL,
     hechoVenta_rangoEtarioCliente_id INT NOT NULL,
     hechoVenta_cantidadVentas DECIMAL(18, 0) NOT NULL,
-    hechoRubro_totalVentas DECIMAL(18, 2) NOT NULL
+    hechoVenta_totalVentas DECIMAL(18, 2) NOT NULL
 );
 
 CREATE TABLE NJRE.BI_hecho_publicacion (
@@ -553,7 +553,7 @@ GO
 CREATE PROCEDURE NJRE.BI_migrar_hechoVenta AS
 BEGIN
 	INSERT INTO NJRE.BI_hecho_venta
-	(hechoVenta_tiempo_id, hechoVenta_ubicacionAlmacen_id, hechoVenta_ubicacionCliente_id, hechoVenta_rubro_id, hechoVenta_rangoEtarioCliente_id, hechoVenta_cantidadVentas, hechoRubro_totalVentas)
+	(hechoVenta_tiempo_id, hechoVenta_ubicacionAlmacen_id, hechoVenta_ubicacionCliente_id, hechoVenta_rubro_id, hechoVenta_rangoEtarioCliente_id, hechoVenta_cantidadVentas, hechoVenta_totalVentas)
 	SELECT 
 		tiempo_id,
 		ubiAlmacen.ubicacion_id,
@@ -644,7 +644,32 @@ GO
 -- Vista 1
 -- Vista 2
 -- Vista 3
+IF OBJECT_ID('NJRE.BI_ventaPromedioMensual') IS NOT NULL 
+    DROP VIEW NJRE.BI_ventaPromedioMensual
+GO 
+CREATE VIEW NJRE.BI_ventaPromedioMensual AS
+SELECT tiempo_anio, tiempo_mes, ubicacion_provincia_nombre, sum(hechoVenta_totalVentas) / sum(hechoVenta_cantidadVentas) 'promedio ventas'
+FROM NJRE.BI_hecho_venta
+	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoVenta_tiempo_id
+	INNER JOIN NJRE.BI_ubicacion on ubicacion_id= hechoVenta_ubicacionAlmacen_id
+GROUP BY hechoVenta_tiempo_id, tiempo_anio, tiempo_mes, ubicacion_id, ubicacion_provincia_nombre
+GO
+
 -- Vista 4
+IF OBJECT_ID('NJRE.BI_rendimientoDeRubros') IS NOT NULL 
+    DROP VIEW NJRE.BI_rendimientoDeRubros
+GO 
+CREATE VIEW NJRE.BI_rendimientoDeRubros AS
+SELECT TOP 5 tiempo_anio, tiempo_cuatrimestre, ubicacion_localidad_nombre, rangoEtarioCliente_nombre, rubro_id, rubro_nombre
+FROM NJRE.BI_hecho_venta
+	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoVenta_tiempo_id
+	INNER JOIN NJRE.BI_rubro on rubro_id = hechoVenta_rubro_id
+	INNER JOIN NJRE.BI_ubicacion on ubicacion_id= hechoVenta_ubicacionCliente_id
+	INNER JOIN NJRE.BI_rango_etario_cliente on rangoEtarioCliente_id= hechoVenta_rangoEtarioCliente_id
+GROUP BY tiempo_anio, tiempo_cuatrimestre, ubicacion_localidad_id, ubicacion_localidad_nombre, hechoVenta_rangoEtarioCliente_id, rangoEtarioCliente_nombre, rubro_id, rubro_nombre
+ORDER BY sum(hechoVenta_totalVentas)
+GO
+
 -- Vista 5
 -- Vista 6
 
