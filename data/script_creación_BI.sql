@@ -109,8 +109,8 @@ GO
 
 CREATE TABLE NJRE.BI_hecho_venta (
     hechoVenta_tiempo_id INT NOT NULL,
-    hechoVenta_ubicacionAlmacen_id INT NOT NULL,
-    hechoVenta_ubicacionCliente_id INT NOT NULL,
+    hechoVenta_provinciaAlmacen_id INT NOT NULL,
+    hechoVenta_localidadCliente_id INT NOT NULL,
     hechoVenta_rubro_id INT NOT NULL,
     hechoVenta_rangoEtarioCliente_id INT NOT NULL,
     hechoVenta_cantidadVentas DECIMAL(18, 0) NOT NULL,
@@ -129,7 +129,7 @@ CREATE TABLE NJRE.BI_hecho_publicacion (
 CREATE TABLE NJRE.BI_hecho_pago (
     hechoPago_tipoMedioPago_id INT NOT NULL,
     hechoPago_tiempo_id INT NOT NULL,
-    hechoPago_ubicacionCliente_id INT NOT NULL,
+    hechoPago_localidadCliente_id INT NOT NULL,
     hechoPago_cuota_id INT NOT NULL,
     hechoPago_importeTotalCuotas DECIMAL(18, 2) NOT NULL
 );
@@ -137,15 +137,15 @@ CREATE TABLE NJRE.BI_hecho_pago (
 CREATE TABLE NJRE.BI_hecho_factura (
     hechoFactura_tiempo_id INT NOT NULL,
     hechoFactura_concepto_id INT NOT NULL,
-    hechoFactura_ubicacionVendedor_id INT NOT NULL,
+    hechoFactura_provinciaVendedor_id INT NOT NULL,
     hechoFactura_porcentajeFacturacion DECIMAL(18, 2) NOT NULL,
     hechoFactura_montoFacturado DECIMAL(18, 2) NOT NULL
 );
 
 CREATE TABLE NJRE.BI_hecho_envio (
     hechoEnvio_tiempo_id INT NOT NULL,
-    hechoEnvio_ubicacionAlmacen_id INT NOT NULL,
-    hechoEnvio_ubicacionCliente_id INT NOT NULL,
+    hechoEnvio_provinciaAlmacen_id INT NOT NULL,
+    hechoEnvio_localidadCliente_id INT NOT NULL,
     hechoEnvio_tipoEnvio_id INT NOT NULL,
     hechoEnvio_cantidadEnvios DECIMAL(18, 0) NOT NULL,
     hechoEnvio_totalEnviosCumplidos DECIMAL(18, 0) NOT NULL,
@@ -201,12 +201,14 @@ CREATE TABLE NJRE.BI_tiempo (
 	CONSTRAINT CHK_TiempoMes CHECK (tiempo_mes between 1 and 12)
 );
 
-CREATE TABLE NJRE.BI_ubicacion (
-    ubicacion_id INT IDENTITY(1,1),
-    ubicacion_localidad_id INT NOT NULL,
-    ubicacion_localidad_nombre NVARCHAR(50) NOT NULL,
-    ubicacion_provincia_id CHAR(2) NOT NULL,
-    ubicacion_provincia_nombre NVARCHAR(50) NOT NULL
+CREATE TABLE NJRE.BI_localidad (
+    localidad_id INT IDENTITY(1,1),
+    localidad_nombre NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE NJRE.BI_provincia (
+    provincia_id NCHAR(2) NOT NULL,
+    provincia_nombre NVARCHAR(50) NOT NULL
 );
 
 CREATE TABLE NJRE.BI_cuota (
@@ -222,27 +224,30 @@ CREATE TABLE NJRE.BI_cuota (
 -- Hechos
 
 ALTER TABLE NJRE.BI_hecho_venta
-ADD CONSTRAINT PK_BI_HechoVenta PRIMARY KEY (hechoVenta_tiempo_id, hechoVenta_ubicacionAlmacen_id, hechoVenta_ubicacionCliente_id, hechoVenta_rubro_id, hechoVenta_rangoEtarioCliente_id);
+ADD CONSTRAINT PK_BI_HechoVenta PRIMARY KEY (hechoVenta_tiempo_id, hechoVenta_provinciaAlmacen_id, hechoVenta_localidadCliente_id, hechoVenta_rubro_id, hechoVenta_rangoEtarioCliente_id);
 
 ALTER TABLE NJRE.BI_hecho_publicacion
 ADD CONSTRAINT PK_BI_HechoPublicacion PRIMARY KEY (hechoPublicacion_tiempo_id, hechoPublicacion_subrubro_id, hechoPublicacion_marca_id);
 
 ALTER TABLE NJRE.BI_hecho_pago
-ADD CONSTRAINT PK_BI_HechoPago PRIMARY KEY (hechoPago_tipoMedioPago_id, hechoPago_tiempo_id, hechoPago_ubicacionCliente_id, hechoPago_cuota_id);
+ADD CONSTRAINT PK_BI_HechoPago PRIMARY KEY (hechoPago_tipoMedioPago_id, hechoPago_tiempo_id, hechoPago_localidadCliente_id, hechoPago_cuota_id);
 
 ALTER TABLE NJRE.BI_hecho_factura
-ADD CONSTRAINT PK_BI_HechoFactura PRIMARY KEY (hechoFactura_tiempo_id, hechoFactura_concepto_id, hechoFactura_ubicacionVendedor_id);
+ADD CONSTRAINT PK_BI_HechoFactura PRIMARY KEY (hechoFactura_tiempo_id, hechoFactura_concepto_id, hechoFactura_provinciaVendedor_id);
 
 ALTER TABLE NJRE.BI_hecho_envio
-ADD CONSTRAINT PK_BI_HechoEnvio PRIMARY KEY (hechoEnvio_tiempo_id, hechoEnvio_ubicacionAlmacen_id, hechoEnvio_ubicacionCliente_id, hechoEnvio_tipoEnvio_id);
+ADD CONSTRAINT PK_BI_HechoEnvio PRIMARY KEY (hechoEnvio_tiempo_id, hechoEnvio_provinciaAlmacen_id, hechoEnvio_localidadCliente_id, hechoEnvio_tipoEnvio_id);
 
 -- Dimensiones
 
 ALTER TABLE NJRE.BI_tiempo
 ADD CONSTRAINT PK_BI_Tiempo PRIMARY KEY (tiempo_id);
 
-ALTER TABLE NJRE.BI_ubicacion
-ADD CONSTRAINT PK_BI_Ubicacion PRIMARY KEY (ubicacion_id);
+ALTER TABLE NJRE.BI_localidad
+ADD CONSTRAINT PK_BI_Localidad PRIMARY KEY (localidad_id);
+
+ALTER TABLE NJRE.BI_provincia
+ADD CONSTRAINT PK_BI_Provincia PRIMARY KEY (provincia_id);
 
 ALTER TABLE NJRE.BI_rango_etario_cliente
 ADD CONSTRAINT PK_BI_RangoEtarioCliente PRIMARY KEY (rangoEtarioCliente_id);
@@ -275,8 +280,8 @@ ADD CONSTRAINT PK_BI_Cuota PRIMARY KEY (cuota_id);
 
 ALTER TABLE NJRE.BI_hecho_venta
 ADD CONSTRAINT FK_BI_HechoVenta_Tiempo FOREIGN KEY (hechoVenta_tiempo_id) REFERENCES NJRE.BI_tiempo(tiempo_id),
-    CONSTRAINT FK_BI_HechoVenta_UbicacionAlmacen FOREIGN KEY (hechoVenta_ubicacionAlmacen_id) REFERENCES NJRE.BI_ubicacion(ubicacion_id),
-    CONSTRAINT FK_BI_HechoVenta_UbicacionCliente FOREIGN KEY (hechoVenta_ubicacionCliente_id) REFERENCES NJRE.BI_ubicacion(ubicacion_id),
+    CONSTRAINT FK_BI_HechoVenta_ProvinciaAlmacen FOREIGN KEY (hechoVenta_provinciaAlmacen_id) REFERENCES NJRE.BI_provincia(provincia_id),
+    CONSTRAINT FK_BI_HechoVenta_LocalidadCliente FOREIGN KEY (hechoVenta_localidadCliente_id) REFERENCES NJRE.BI_localidad(localidad_id),
     CONSTRAINT FK_BI_HechoVenta_Rubro FOREIGN KEY (hechoVenta_rubro_id) REFERENCES NJRE.BI_rubro(rubro_id),
     CONSTRAINT FK_BI_HechoVenta_RangoEtarioCliente FOREIGN KEY (hechoVenta_rangoEtarioCliente_id) REFERENCES NJRE.BI_rango_etario_cliente(rangoEtarioCliente_id);
 
@@ -288,18 +293,18 @@ ADD CONSTRAINT FK_BI_HechoPublicacion_Tiempo FOREIGN KEY (hechoPublicacion_tiemp
 ALTER TABLE NJRE.BI_hecho_pago
 ADD CONSTRAINT FK_BI_HechoPago_TipoMedioPago FOREIGN KEY (hechoPago_tipoMedioPago_id) REFERENCES NJRE.BI_tipo_medio_pago(tipoMedioPago_id),
     CONSTRAINT FK_BI_HechoPago_Tiempo FOREIGN KEY (hechoPago_tiempo_id) REFERENCES NJRE.BI_tiempo(tiempo_id),
-    CONSTRAINT FK_BI_HechoPago_Ubicacion FOREIGN KEY (hechoPago_ubicacionCliente_id) REFERENCES NJRE.BI_ubicacion(ubicacion_id),
+    CONSTRAINT FK_BI_HechoPago_LocalidadCliente FOREIGN KEY (hechoPago_localidadCliente_id) REFERENCES NJRE.BI_localidad(localidad_id),
     CONSTRAINT FK_BI_HechoPago_Cuota FOREIGN KEY (hechoPago_cuota_id) REFERENCES NJRE.BI_cuota(cuota_id);
 
 ALTER TABLE NJRE.BI_hecho_factura
 ADD CONSTRAINT FK_BI_HechoFactura_Tiempo FOREIGN KEY (hechoFactura_tiempo_id) REFERENCES NJRE.BI_tiempo(tiempo_id),
     CONSTRAINT FK_BI_HechoFactura_Concepto FOREIGN KEY (hechoFactura_concepto_id) REFERENCES NJRE.BI_concepto(concepto_id),
-    CONSTRAINT FK_BI_HechoFactura_UbicacionVendedor FOREIGN KEY (hechoFactura_ubicacionVendedor_id) REFERENCES NJRE.BI_ubicacion(ubicacion_id);
+    CONSTRAINT FK_BI_HechoFactura_ProvinciaVendedor FOREIGN KEY (hechoFactura_provinciaVendedor_id) REFERENCES NJRE.BI_provincia(provincia_id);
 
 ALTER TABLE NJRE.BI_hecho_envio
 ADD CONSTRAINT FK_BI_HechoEnvio_Tiempo FOREIGN KEY (hechoEnvio_tiempo_id) REFERENCES NJRE.BI_tiempo(tiempo_id),
-    CONSTRAINT FK_BI_HechoEnvio_UbicacionAlmacen FOREIGN KEY (hechoEnvio_ubicacionAlmacen_id) REFERENCES NJRE.BI_ubicacion(ubicacion_id),
-    CONSTRAINT FK_BI_HechoEnvio_UbicacionCliente FOREIGN KEY (hechoEnvio_ubicacionCliente_id) REFERENCES NJRE.BI_ubicacion(ubicacion_id),
+    CONSTRAINT FK_BI_HechoEnvio_ProvinciaAlmacen FOREIGN KEY (hechoEnvio_provinciaAlmacen_id) REFERENCES NJRE.BI_provincia(provincia_id),
+    CONSTRAINT FK_BI_HechoEnvio_LocalidadCliente FOREIGN KEY (hechoEnvio_localidadCliente_id) REFERENCES NJRE.BI_localidad(localidad_id),
     CONSTRAINT FK_BI_HechoEnvio_TipoEnvio FOREIGN KEY (hechoEnvio_tipoEnvio_id) REFERENCES NJRE.BI_tipo_envio(tipoEnvio_id);
 
 
@@ -320,26 +325,6 @@ AS
         WHERE tiempo_anio = YEAR(@fecha_modelo) AND tiempo_mes = MONTH(@fecha_modelo)
 
         RETURN @id_fecha 
-    END
-GO
-
-IF OBJECT_ID('NJRE.BI_obtener_ubicacion_id') IS NOT NULL 
-    DROP FUNCTION NJRE.BI_obtener_ubicacion_id;
-GO
-CREATE FUNCTION NJRE.BI_obtener_ubicacion_id(@idDomicilio INT) 
-RETURNS INT 
-AS 
-    BEGIN
-        DECLARE @idUbicacion INT = 0;
-
-        SELECT @idUbicacion = ubicacion_id
-        FROM NJRE.domicilio d
-			INNER JOIN NJRE.localidad l ON d.domicilio_localidad = l.localidad_id
-			INNER JOIN NJRE.BI_ubicacion u ON l.localidad_nombre = u.ubicacion_localidad_nombre
-            INNER JOIN NJRE.provincia ON provincia_id = domicilio_provincia AND provincia_nombre = ubicacion_provincia_nombre
-        WHERE d.domicilio_id = @idDomicilio;
-
-        RETURN @idUbicacion;
     END
 GO
 
@@ -419,16 +404,24 @@ BEGIN
 END
 GO 
 
-IF OBJECT_ID('NJRE.BI_migrar_ubicacion') IS NOT NULL 
-    DROP PROCEDURE NJRE.BI_migrar_ubicacion
+IF OBJECT_ID('NJRE.BI_migrar_localidad') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_localidad
 GO 
-CREATE PROCEDURE NJRE.BI_migrar_ubicacion AS
+CREATE PROCEDURE NJRE.BI_migrar_localidad AS
 BEGIN
-    INSERT INTO NJRE.BI_ubicacion (ubicacion_provincia_id, ubicacion_provincia_nombre, ubicacion_localidad_id, ubicacion_localidad_nombre)
-	SELECT DISTINCT provincia_id, provincia_nombre, domicilio_localidad, localidad_nombre
-	FROM NJRE.domicilio 
-    INNER JOIN NJRE.provincia ON provincia_id = domicilio_provincia
-    INNER JOIN NJRE.localidad ON localidad_id = domicilio_localidad
+    INSERT INTO NJRE.BI_localidad (localidad_id, localidad_nombre)
+	SELECT localidad_id, localidad_nombre
+	FROM NJRE.localidad
+END
+
+IF OBJECT_ID('NJRE.BI_migrar_provincia') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_provincia
+GO 
+CREATE PROCEDURE NJRE.BI_migrar_provincia AS
+BEGIN
+    INSERT INTO NJRE.BI_provincia (provincia_id, provincia_nombre)
+	SELECT provincia_id, provincia_nombre
+	FROM NJRE.provincia
 END
 
 IF OBJECT_ID('NJRE.BI_migrar_rubro') IS NOT NULL 
