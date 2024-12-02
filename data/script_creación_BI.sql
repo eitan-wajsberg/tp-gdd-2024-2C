@@ -625,7 +625,7 @@ EXEC NJRE.BI_migrar_subrubro;
 EXEC NJRE.BI_migrar_marca;
 EXEC NJRE.BI_migrar_tipoEnvio;
 EXEC NJRE.BI_migrar_tipoMedioPago;
-EXEC NJRE.BI_migrar_concepto;
+EXEC NJRE.BI_migrar_concepto; -- por alguna razon que desconozco no ejecuta bien
 
 -- Hechos
 
@@ -640,3 +640,38 @@ GO
 -------------------------------------------------------------------------------------------------
 -- VISTAS
 -------------------------------------------------------------------------------------------------
+
+-- Vista 1
+-- Vista 2
+-- Vista 3
+-- Vista 4
+-- Vista 5
+-- Vista 6
+
+-- Vista 7 
+-- REVISAR: Todos tienen porcentaje de cumplimiento 0 ya que ningun envio fue entregado, todos estan programados desde 2025 en adelante
+IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL 
+    DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
+GO 
+CREATE VIEW NJRE.BI_porcentajeCumplimientoEnvios AS
+SELECT DISTINCT ubicacion_provincia_nombre, tiempo_anio, tiempo_mes, 
+	CASE 
+		WHEN hechoEnvio_totalEnviosCumplidos = 0 THEN 0
+		ELSE hechoEnvio_cantidadEnvios * 1.0 / hechoEnvio_totalEnviosCumplidos 
+    END porcentajeCumplimiento
+FROM NJRE.BI_hecho_envio he
+	INNER JOIN NJRE.BI_ubicacion u ON u.ubicacion_id = he.hechoEnvio_ubicacionAlmacen_id
+	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id;
+GO
+
+-- Vista 8
+IF OBJECT_ID('NJRE.BI_localidadesConMayorCostoEnvio') IS NOT NULL 
+    DROP VIEW NJRE.BI_localidadesConMayorCostoEnvio
+GO 
+CREATE VIEW NJRE.BI_localidadesConMayorCostoEnvio AS
+SELECT TOP 5 ubicacion_localidad_nombre, he.hechoEnvio_totalCostoEnvio
+FROM NJRE.BI_hecho_envio he INNER JOIN NJRE.BI_ubicacion u ON u.ubicacion_id = he.hechoEnvio_ubicacionCliente_id
+ORDER BY he.hechoEnvio_totalCostoEnvio DESC;
+
+-- Vista 9
+-- Vista 10
