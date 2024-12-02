@@ -299,6 +299,7 @@ ADD CONSTRAINT FK_BI_HechoEnvio_Tiempo FOREIGN KEY (hechoEnvio_tiempo_id) REFERE
     CONSTRAINT FK_BI_HechoEnvio_UbicacionCliente FOREIGN KEY (hechoEnvio_ubicacionCliente_id) REFERENCES NJRE.BI_ubicacion(ubicacion_id),
     CONSTRAINT FK_BI_HechoEnvio_TipoEnvio FOREIGN KEY (hechoEnvio_tipoEnvio_id) REFERENCES NJRE.BI_tipo_envio(tipoEnvio_id);
 
+
 -------------------------------------------------------------------------------------------------
 -- FUNCIONES AUXILIARES DE LA MIGRACION
 -------------------------------------------------------------------------------------------------
@@ -317,8 +318,8 @@ AS
 
         RETURN @id_fecha 
     END
-GO 
-/*
+GO
+
 IF OBJECT_ID('NJRE.BI_obtener_ubicacion_id') IS NOT NULL 
     DROP FUNCTION NJRE.BI_obtener_ubicacion_id;
 GO
@@ -330,16 +331,16 @@ AS
 
         SELECT @idUbicacion = ubicacion_id
         FROM NJRE.domicilio d
-            INNER JOIN NJRE.BI_ubicacion u ON d.domicilio_localidad = u.ubicacion_localidad
-            INNER JOIN NJRE.provincia 
-                ON provincia_id = domicilio_provincia
-                AND provincia_nombre = ubicacion_provincia
+			INNER JOIN NJRE.localidad l ON d.domicilio_localidad = l.localidad_id
+			INNER JOIN NJRE.BI_ubicacion u ON l.localidad_nombre = u.ubicacion_localidad_nombre
+            INNER JOIN NJRE.provincia ON provincia_id = domicilio_provincia AND provincia_nombre = ubicacion_provincia_nombre
         WHERE d.domicilio_id = @idDomicilio;
 
         RETURN @idUbicacion;
     END
 GO
-*/
+
+
 IF OBJECT_ID('NJRE.BI_obtener_tiempo_cuatrimestre') IS NOT NULL 
     DROP FUNCTION NJRE.BI_obtener_tiempo_cuatrimestre;
 GO
@@ -365,12 +366,14 @@ GO
 -- PROCEDURES PARA LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
--- dimensiones
+-- Dimensiones
+
 IF OBJECT_ID('NJRE.BI_migrar_tiempo') IS NOT NULL 
     DROP PROCEDURE NJRE.BI_migrar_tiempo
 GO 
 CREATE PROCEDURE NJRE.BI_migrar_tiempo AS
 BEGIN
+    -- OBSERVACION: quizas se puede sacar directamente de la tabla maestra, en lugar de hacer UNIONs
     INSERT INTO NJRE.BI_tiempo (tiempo_anio, tiempo_mes, tiempo_cuatrimestre) 
 	SELECT DISTINCT YEAR(p.publicacion_fecha_inicio), MONTH(p.publicacion_fecha_inicio), NJRE.BI_obtener_tiempo_cuatrimestre(publicacion_fecha_inicio)
 	FROM NJRE.publicacion p
@@ -428,10 +431,10 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID('NJRE.BI_migrar_rango_etario_cliente') IS NOT NULL 
-    DROP PROCEDURE NJRE.BI_migrar_rango_etario_cliente
+IF OBJECT_ID('NJRE.BI_migrar_rangoEtarioCliente') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_rangoEtarioCliente
 GO 
-CREATE PROCEDURE NJRE.BI_migrar_rango_etario_cliente AS
+CREATE PROCEDURE NJRE.BI_migrar_rangoEtarioCliente AS
 BEGIN
     INSERT INTO NJRE.BI_rango_etario_cliente (rangoEtarioCliente_nombre)
     VALUES ('JUVENTUD'), ('ADULTEZ_TEMPRANA'), ('ADULTEZ_MEDIA'), ('ADULTEZ_AVANZADA');
@@ -449,17 +452,17 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID('NJRE.BI_migrar_tipo_medio_pago') IS NOT NULL 
-    DROP PROCEDURE NJRE.BI_migrar_tipo_medio_pago
+IF OBJECT_ID('NJRE.BI_migrar_tipoMedioPago') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_tipoMedioPago
 GO 
-CREATE PROCEDURE NJRE.BI_migrar_tipo_medio_pago AS
+CREATE PROCEDURE NJRE.BI_migrar_tipoMedioPago AS
 BEGIN
-    INSERT INTO NJRE.BI_tipo_medio_pago (tipoMedioPago_nombre )
+    INSERT INTO NJRE.BI_tipo_medio_pago (tipoMedioPago_nombre)
     SELECT DISTINCT tipoMedioPago_nombre
     FROM NJRE.tipo_medio_pago 
 END
 
-IF OBJECT_ID('NJRE.BI_concepto') IS NOT NULL 
+IF OBJECT_ID('NJRE.BI_migrar_concepto') IS NOT NULL 
     DROP PROCEDURE NJRE.BI_migrar_concepto
 GO 
 CREATE PROCEDURE NJRE.BI_migrar_concepto AS
@@ -469,8 +472,8 @@ BEGIN
     FROM NJRE.concepto 
 END 
 
--- Migracion de hechos
 
+-- Hechos
 
 /* SELECT
 --		NJRE.BI_obtener_tiempo_id(v.venta_fecha),
@@ -513,38 +516,6 @@ END
 GO
 */
 
-IF OBJECT_ID('NJRE.BI_migrar_hechoPublicacion') IS NOT NULL 
-    DROP PROCEDURE NJRE.BI_migrar_hechoPublicacion
-GO 
-CREATE PROCEDURE NJRE.BI_migrar_hechoPublicacion AS
-BEGIN
-	INSERT INTO NJRE.BI_hechoPublicacion
-	(hechoVenta_tiempo_id, hechoVenta_rangoHorario_id, hechoVenta_ubicacionAlmacen_id, hechoVenta_valorPromedio, hechoVenta_cantidadVentas)
-	SELECT 
-		t.tiempo_id,
-		r.rangoHorario_id,
-		u.ubicacion_id,
-		SUM(dv.detalleVenta_cantidad),
-		SUM(dv.detalleVenta_precio)
-	FROM NJRE.venta v
-	INNER JOIN NJRE.detalle_venta dv ON v.venta_id = dv.detalleVenta_venta_id
-	INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
-	INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
-	CROSS APPLY (
-		SELECT NJRE.BI_obtener_tiempo_id(v.venta_fecha) AS tiempo_id
-	) t
-	CROSS APPLY (
-		SELECT NJRE.BI_obtener_rangoHorario_id(v.venta_fecha) AS rangoHorario_id
-	) r
-	CROSS APPLY (
-		SELECT NJRE.BI_obtener_ubicacion_id(a.almacen_domicilio_id) AS ubicacion_id
-	) u
-	WHERE r.rangoHorario_id IS NOT NULL
-	GROUP BY t.tiempo_id, r.rangoHorario_id, u.ubicacion_id;
-END
-GO 
-
-
 IF OBJECT_ID('NJRE.BI_migrar_hechoVenta') IS NOT NULL 
     DROP PROCEDURE NJRE.BI_migrar_hechoVenta
 GO 
@@ -557,37 +528,84 @@ BEGIN
 		ubiAlmacen.ubicacion_id,
 		ubiCliente.ubicacion_id,
 		s.subrubro_rubro_id,
-		NJRE.BI_obtener_rango_etario(c.cliente_fecha_nacimiento),
-		count(distinct venta_id),
+		NJRE.BI_obtener_rangoEtario(c.cliente_fecha_nacimiento),
+		count(DISTINCT venta_id),
 		SUM(dv.detalleVenta_cantidad)
 	FROM NJRE.venta v
         INNER JOIN NJRE.detalle_venta dv ON v.venta_id = dv.detalleVenta_venta_id
         INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
         INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
         INNER JOIN NJRE.envio e ON e.envio_venta_id = v.venta_id
-		INNER JOIN NJRE.producto pr on pr.producto_id = p.publicacion_producto_id
-		INNER JOIN NJRE.subrubro s on s.subrubro_id = pr.producto_subrubro_id
-		INNER JOIN NJRE.cliente c on c.cliente_id = v.venta_cliente_id
-		INNER JOIN NJRE.BI_tiempo on tiempo_anio = datepart(year, venta_fecha) and tiempo_mes = datepart(month, venta_fecha)
-        INNER JOIN NJRE.domicilio domAlmacen on domAlmacen.domicilio_id = a.almacen_domicilio_id
+		INNER JOIN NJRE.producto pr ON pr.producto_id = p.publicacion_producto_id
+		INNER JOIN NJRE.subrubro s ON s.subrubro_id = pr.producto_subrubro_id
+		INNER JOIN NJRE.cliente c ON c.cliente_id = v.venta_cliente_id
+		INNER JOIN NJRE.BI_tiempo ON tiempo_anio = datepart(year, venta_fecha) and tiempo_mes = datepart(month, venta_fecha)
+        INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
 		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad and ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
-		INNER JOIN NJRE.domicilio domCliente on domCliente.domicilio_id = e.envio_domicilio_id
+		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
 		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad and ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
-	GROUP BY tiempo_id, ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id, s.subrubro_rubro_id, NJRE.BI_obtener_rango_etario(c.cliente_fecha_nacimiento);
-   
+	GROUP BY tiempo_id, ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id, s.subrubro_rubro_id, NJRE.BI_obtener_rangoEtario(c.cliente_fecha_nacimiento);  
 END
+GO
+
+IF OBJECT_ID('NJRE.BI_migrar_hechoEnvio') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_hechoEnvio
 GO 
+CREATE PROCEDURE NJRE.BI_migrar_hechoEnvio AS
+BEGIN
+    INSERT INTO NJRE.BI_hecho_envio 
+    (hechoEnvio_tiempo_id, hechoEnvio_ubicacionAlmacen_id, hechoEnvio_ubicacionCliente_id, hechoEnvio_tipoEnvio_id, hechoEnvio_cantidadEnvios, hechoEnvio_totalEnviosCumplidos, hechoEnvio_totalEnviosNoCumplidos, hechoEnvio_totalCostoEnvio)
+    SELECT 
+        NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada) AS tiempo_id,
+        ubiAlmacen.ubicacion_id, 
+		ubiCliente.ubicacion_id,
+        e.envio_tipoEnvio_id,
+        COUNT(DISTINCT e.envio_id),
+        SUM(CASE WHEN e.envio_estado = 'Entregado' THEN e.envio_costo ELSE 0 END) AS totalEnviosCumplidos,
+        SUM(CASE WHEN e.envio_estado <> 'Entregado' THEN e.envio_costo ELSE 0 END) AS totalEnviosNoCumplidos,
+        SUM(e.envio_costo) AS totalCostoEnvio
+    FROM NJRE.envio e
+		INNER JOIN NJRE.detalle_venta dv ON dv.detalleVenta_venta_id = e.envio_venta_id
+		INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
+		INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
+		INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
+		INNER JOIN NJRE.BI_ubicacion ubiAlmacen ON ubiAlmacen.ubicacion_localidad_id = domAlmacen.domicilio_localidad and ubiAlmacen.ubicacion_provincia_id = domAlmacen.domicilio_provincia
+		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
+		INNER JOIN NJRE.BI_ubicacion ubiCliente ON ubiCliente.ubicacion_localidad_id = domCliente.domicilio_localidad and ubiCliente.ubicacion_provincia_id = domCliente.domicilio_provincia
+    GROUP BY 
+        NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada), 
+        ubiAlmacen.ubicacion_id, ubiCliente.ubicacion_id,
+        e.envio_tipoEnvio_id
+END
+GO
+
 
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
 
+-- Dimensiones
+
 EXEC NJRE.BI_migrar_rubro;
 EXEC NJRE.BI_migrar_tiempo;
 EXEC NJRE.BI_migrar_ubicacion;
-EXEC NJRE.BI_migrar_rango_etario_cliente;
+EXEC NJRE.BI_migrar_rangoEtarioCliente;
+EXEC NJRE.BI_migrar_subrubro;
+EXEC NJRE.BI_migrar_marca;
+EXEC NJRE.BI_migrar_tipoEnvio;
+EXEC NJRE.BI_migrar_tipoMedioPago;
+-- EXEC NJRE.BI_migrar_concepto;
+
+-- Hechos
+
 EXEC NJRE.BI_migrar_hechoVenta;
+EXEC NJRE.BI_migrar_hechoEnvio;
+-- EXEC NJRE.BI_migrar_hechoPublicacion;
+-- EXEC NJRE.BI_migrar_hechoPago;
+-- EXEC NJRE.BI_migrar_hechoFactura;
+
 GO
+
 
 -------------------------------------------------------------------------------------------------
 -- VISTAS
