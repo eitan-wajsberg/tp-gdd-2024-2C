@@ -189,7 +189,7 @@ CREATE TABLE NJRE.vendedor (
 
 CREATE TABLE NJRE.almacen (
     almacen_id DECIMAL(18, 0) NOT NULL, -- Posee un código en la tabla maestra
-    almacen_docimilio_id INT NOT NULL,
+    almacen_domicilio_id INT NOT NULL,
     almacen_nombre NVARCHAR(100) NULL,
     almacen_costo_dia DECIMAL(18, 2) NOT NULL
 );
@@ -205,7 +205,7 @@ CREATE TABLE NJRE.venta (
     venta_id DECIMAL(18, 0) NOT NULL,  -- Posee un código en la tabla maestra
     venta_cliente_id INT NOT NULL, 
     venta_fecha DATETIME NOT NULL,
-    venta_total DECIMAL(10, 2) NOT NULL
+    venta_total DECIMAL(18, 2) NOT NULL
 );
 
 CREATE TABLE NJRE.detalle_venta (
@@ -484,7 +484,7 @@ ALTER TABLE NJRE.vendedor
 ADD  CONSTRAINT FK_Vendedor_Usuario FOREIGN KEY (vendedor_usuario_id) REFERENCES NJRE.usuario (usuario_id);
 
 ALTER TABLE NJRE.almacen 
-ADD CONSTRAINT FK_Almacen_Domicilio FOREIGN KEY (almacen_docimilio_id) REFERENCES NJRE.domicilio (domicilio_id);
+ADD CONSTRAINT FK_Almacen_Domicilio FOREIGN KEY (almacen_domicilio_id) REFERENCES NJRE.domicilio (domicilio_id);
 
 ALTER TABLE NJRE.historial_costo_almacen 
 ADD CONSTRAINT FK_HistorialCostoAlmacen_Almacen FOREIGN KEY (historialCostoAlmacen_almacen_id) REFERENCES NJRE.almacen (almacen_id);
@@ -704,7 +704,7 @@ IF OBJECT_ID('NJRE.migrar_almacen') IS NOT NULL
 GO
 CREATE PROCEDURE NJRE.migrar_almacen AS
 BEGIN
-    INSERT INTO NJRE.almacen (almacen_id, almacen_docimilio_id, almacen_nombre, almacen_costo_dia)
+    INSERT INTO NJRE.almacen (almacen_id, almacen_domicilio_id, almacen_nombre, almacen_costo_dia)
     SELECT DISTINCT almacen_codigo, domicilio_id, almacen_calle + ' ' + CAST(almacen_nro_calle AS NVARCHAR), almacen_costo_dia_al
     FROM gd_esquema.Maestra 
         INNER JOIN NJRE.localidad ON localidad_nombre = almacen_localidad
