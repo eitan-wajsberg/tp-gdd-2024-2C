@@ -127,10 +127,11 @@ CREATE TABLE NJRE.BI_hecho_publicacion (
 );
 
 CREATE TABLE NJRE.BI_hecho_pago (
-    hechoPago_tipoMedioPago_id INT NOT NULL,
     hechoPago_tiempo_id INT NOT NULL,
-    hechoPago_localidadCliente_id INT NOT NULL,
+    hechoPago_medioPago_id INT NOT NULL,
+    hechoPago_tipoMedioPago_id INT NOT NULL,
     hechoPago_cuota_id INT NOT NULL,
+    hechoPago_localidadCliente_id INT NOT NULL,
     hechoPago_importeTotalCuotas DECIMAL(18, 2) NOT NULL
 );
 
@@ -164,6 +165,12 @@ CREATE TABLE NJRE.BI_rubro (
     rubro_id INT IDENTITY(1, 1),
     rubro_nombre NVARCHAR(50) NOT NULL
 );
+
+CREATE TABLE NJRE.BI_medio_pago (
+    medioPago_id INT IDENTITY(1, 1),
+    medioPago_nombre NVARCHAR(50) NOT NULL
+);
+
 
 CREATE TABLE NJRE.BI_subrubro (
     subrubro_id INT IDENTITY(1, 1),
@@ -228,7 +235,7 @@ ALTER TABLE NJRE.BI_hecho_publicacion
 ADD CONSTRAINT PK_BI_HechoPublicacion PRIMARY KEY (hechoPublicacion_tiempo_id, hechoPublicacion_subrubro_id, hechoPublicacion_marca_id);
 
 ALTER TABLE NJRE.BI_hecho_pago
-ADD CONSTRAINT PK_BI_HechoPago PRIMARY KEY (hechoPago_tipoMedioPago_id, hechoPago_tiempo_id, hechoPago_localidadCliente_id, hechoPago_cuota_id);
+ADD CONSTRAINT PK_BI_HechoPago PRIMARY KEY (hechoPago_tiempo_id, hechoPago_localidadCliente_id, hechoPago_medioPago_id, hechoPago_tipoMedioPago_id, hechoPago_cuota_id);
 
 ALTER TABLE NJRE.BI_hecho_factura
 ADD CONSTRAINT PK_BI_HechoFactura PRIMARY KEY (hechoFactura_tiempo_id, hechoFactura_concepto_id, hechoFactura_provinciaVendedor_id);
@@ -246,6 +253,9 @@ ADD CONSTRAINT PK_BI_Localidad PRIMARY KEY (localidad_id);
 
 ALTER TABLE NJRE.BI_provincia
 ADD CONSTRAINT PK_BI_Provincia PRIMARY KEY (provincia_id);
+
+ALTER TABLE NJRE.BI_medio_pago
+ADD CONSTRAINT PK_BI_MedioPago PRIMARY KEY (medioPago_id);
 
 ALTER TABLE NJRE.BI_rango_etario_cliente
 ADD CONSTRAINT PK_BI_RangoEtarioCliente PRIMARY KEY (rangoEtarioCliente_id);
@@ -290,6 +300,7 @@ ADD CONSTRAINT FK_BI_HechoPublicacion_Tiempo FOREIGN KEY (hechoPublicacion_tiemp
 
 ALTER TABLE NJRE.BI_hecho_pago
 ADD CONSTRAINT FK_BI_HechoPago_TipoMedioPago FOREIGN KEY (hechoPago_tipoMedioPago_id) REFERENCES NJRE.BI_tipo_medio_pago(tipoMedioPago_id),
+	CONSTRAINT FK_BI_HechoPago_MedioPago FOREIGN KEY (hechoPago_medioPago_id) REFERENCES NJRE.BI_medio_pago(medioPago_id),
     CONSTRAINT FK_BI_HechoPago_Tiempo FOREIGN KEY (hechoPago_tiempo_id) REFERENCES NJRE.BI_tiempo(tiempo_id),
     CONSTRAINT FK_BI_HechoPago_LocalidadCliente FOREIGN KEY (hechoPago_localidadCliente_id) REFERENCES NJRE.BI_localidad(localidad_id),
     CONSTRAINT FK_BI_HechoPago_Cuota FOREIGN KEY (hechoPago_cuota_id) REFERENCES NJRE.BI_cuota(cuota_id);
@@ -414,6 +425,17 @@ BEGIN
     INSERT INTO NJRE.BI_localidad (localidad_nombre)
 	SELECT localidad_nombre
 	FROM NJRE.localidad
+END
+GO
+
+IF OBJECT_ID('NJRE.BI_migrar_medio_pago') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_medio_pago
+GO 
+CREATE PROCEDURE NJRE.BI_migrar_medio_pago AS
+BEGIN
+    INSERT INTO NJRE.BI_medio_pago(medioPago_nombre)
+	SELECT medioPago_nombre
+	FROM NJRE.medio_pago
 END
 GO
 
@@ -638,11 +660,12 @@ GO
 CREATE PROCEDURE NJRE.BI_migrar_hechoPago AS
 BEGIN
     INSERT INTO NJRE.BI_hecho_pago
-    (hechoPago_tipoMedioPago_id, hechoPago_tiempo_id, hechoPago_localidadCliente_id, hechoPago_cuota_id, hechoPago_importeTotalCuotas)
+    (hechoPago_tiempo_id, hechoPago_localidadCliente_id, hechoPago_medioPago_id, hechoPago_tipoMedioPago_id, hechoPago_cuota_id, hechoPago_importeTotalCuotas)
     SELECT 
-        medioPago_tipoMedioPago_id,
         tiempo_id,
         domicilio_localidad,
+		pago_medioPago_id,
+        medioPago_tipoMedioPago_id,
         cuota_id,
         SUM(detallePago_importe_parcial)
     FROM NJRE.pago
@@ -653,9 +676,10 @@ BEGIN
         INNER JOIN NJRE.detalle_pago ON detallePago_pago_id = pago_id
         INNER JOIN NJRE.BI_cuota ON cuota_cantidad = detallePago_cant_cuotas
     GROUP BY 
-        medioPago_tipoMedioPago_id,
         tiempo_id,
         domicilio_localidad,
+		pago_medioPago_id,
+        medioPago_tipoMedioPago_id,
         cuota_id;
 END
 GO
@@ -673,6 +697,7 @@ EXEC NJRE.BI_migrar_rangoEtarioCliente;
 EXEC NJRE.BI_migrar_subrubro;
 EXEC NJRE.BI_migrar_marca;
 EXEC NJRE.BI_migrar_tipoEnvio;
+EXEC NJRE.BI_migrar_medio_pago;
 EXEC NJRE.BI_migrar_tipoMedioPago;
 EXEC NJRE.BI_migrar_concepto;
 EXEC NJRE.BI_migrar_cuota;
