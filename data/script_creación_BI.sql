@@ -129,9 +129,9 @@ CREATE TABLE NJRE.BI_hecho_publicacion (
 CREATE TABLE NJRE.BI_hecho_pago (
     hechoPago_tiempo_id INT NOT NULL,
     hechoPago_medioPago_id INT NOT NULL,
-    hechoPago_tipoMedioPago_id INT NOT NULL,
     hechoPago_cuota_id INT NOT NULL,
     hechoPago_localidadCliente_id INT NOT NULL,
+    hechoPago_tipoMedioPago_id INT NOT NULL,
     hechoPago_importeTotalCuotas DECIMAL(18, 2) NOT NULL
 );
 
@@ -235,7 +235,7 @@ ALTER TABLE NJRE.BI_hecho_publicacion
 ADD CONSTRAINT PK_BI_HechoPublicacion PRIMARY KEY (hechoPublicacion_tiempo_id, hechoPublicacion_subrubro_id, hechoPublicacion_marca_id);
 
 ALTER TABLE NJRE.BI_hecho_pago
-ADD CONSTRAINT PK_BI_HechoPago PRIMARY KEY (hechoPago_tiempo_id, hechoPago_localidadCliente_id, hechoPago_medioPago_id, hechoPago_tipoMedioPago_id, hechoPago_cuota_id);
+ADD CONSTRAINT PK_BI_HechoPago PRIMARY KEY (hechoPago_tiempo_id, hechoPago_medioPago_id, hechoPago_cuota_id, hechoPago_localidadCliente_id, hechoPago_tipoMedioPago_id);
 
 ALTER TABLE NJRE.BI_hecho_factura
 ADD CONSTRAINT PK_BI_HechoFactura PRIMARY KEY (hechoFactura_tiempo_id, hechoFactura_concepto_id, hechoFactura_provinciaVendedor_id);
@@ -299,11 +299,11 @@ ADD CONSTRAINT FK_BI_HechoPublicacion_Tiempo FOREIGN KEY (hechoPublicacion_tiemp
     CONSTRAINT FK_BI_HechoPublicacion_Marca FOREIGN KEY (hechoPublicacion_marca_id) REFERENCES NJRE.BI_marca(marca_id);
 
 ALTER TABLE NJRE.BI_hecho_pago
-ADD CONSTRAINT FK_BI_HechoPago_TipoMedioPago FOREIGN KEY (hechoPago_tipoMedioPago_id) REFERENCES NJRE.BI_tipo_medio_pago(tipoMedioPago_id),
+ADD CONSTRAINT FK_BI_HechoPago_Tiempo FOREIGN KEY (hechoPago_tiempo_id) REFERENCES NJRE.BI_tiempo(tiempo_id),
 	CONSTRAINT FK_BI_HechoPago_MedioPago FOREIGN KEY (hechoPago_medioPago_id) REFERENCES NJRE.BI_medio_pago(medioPago_id),
-    CONSTRAINT FK_BI_HechoPago_Tiempo FOREIGN KEY (hechoPago_tiempo_id) REFERENCES NJRE.BI_tiempo(tiempo_id),
+    CONSTRAINT FK_BI_HechoPago_Cuota FOREIGN KEY (hechoPago_cuota_id) REFERENCES NJRE.BI_cuota(cuota_id),
     CONSTRAINT FK_BI_HechoPago_LocalidadCliente FOREIGN KEY (hechoPago_localidadCliente_id) REFERENCES NJRE.BI_localidad(localidad_id),
-    CONSTRAINT FK_BI_HechoPago_Cuota FOREIGN KEY (hechoPago_cuota_id) REFERENCES NJRE.BI_cuota(cuota_id);
+	CONSTRAINT FK_BI_HechoPago_TipoMedioPago FOREIGN KEY (hechoPago_tipoMedioPago_id) REFERENCES NJRE.BI_tipo_medio_pago(tipoMedioPago_id);
 
 ALTER TABLE NJRE.BI_hecho_factura
 ADD CONSTRAINT FK_BI_HechoFactura_Tiempo FOREIGN KEY (hechoFactura_tiempo_id) REFERENCES NJRE.BI_tiempo(tiempo_id),
@@ -660,13 +660,13 @@ GO
 CREATE PROCEDURE NJRE.BI_migrar_hechoPago AS
 BEGIN
     INSERT INTO NJRE.BI_hecho_pago
-    (hechoPago_tiempo_id, hechoPago_localidadCliente_id, hechoPago_medioPago_id, hechoPago_tipoMedioPago_id, hechoPago_cuota_id, hechoPago_importeTotalCuotas)
+    (hechoPago_tiempo_id, hechoPago_medioPago_id, hechoPago_cuota_id, hechoPago_localidadCliente_id, hechoPago_tipoMedioPago_id, hechoPago_importeTotalCuotas)
     SELECT 
         tiempo_id,
-        domicilio_localidad,
 		pago_medioPago_id,
+        cuota_id,	
+        domicilio_localidad,
         medioPago_tipoMedioPago_id,
-        cuota_id,
         SUM(detallePago_importe_parcial)
     FROM NJRE.pago
         INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, pago_fecha) AND tiempo_mes = DATEPART(month, pago_fecha)
@@ -787,8 +787,10 @@ CREATE VIEW NJRE.BI_localidadesmayorImporteEnCuotas AS
 select tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) importeTotalCuotasXLocalidad
 from NJRE.BI_hecho_pago he
     INNER JOIN NJRE.BI_tiempo ON tiempo_id = he.hechoPago_tiempo_id
-    INNER JOIN NJRE.BI_localidad ON localidad_id = he.hechoPago_localidadCliente_id
     INNER JOIN NJRE.BI_medio_pago ON medioPago_id = he.hechoPago_medioPago_id
+    INNER JOIN NJRE.BI_localidad ON localidad_id = he.hechoPago_localidadCliente_id
+	INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
+WHERE cuota_cantidad > 1
 GROUP BY hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, hechoPago_medioPago_id, medioPago_nombre
 HAVING localidad_id IN (select top 3 hechoPago_localidadCliente_id 
                         from NJRE.BI_hecho_Pago 
