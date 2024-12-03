@@ -652,6 +652,19 @@ GO
 -------------------------------------------------------------------------------------------------
 
 -- Vista 1
+IF OBJECT_ID('NJRE.BI_promedioTiempoPublicacion') IS NOT NULL 
+    DROP VIEW NJRE.BI_promedioTiempoPublicacion
+GO 
+CREATE VIEW NJRE.BI_promedioTiempoPublicacion AS
+SELECT subrubro_descripcion, tiempo_cuatrimestre, 
+SUM(hechoPublicacion_totalDiasPublicaciones) / 
+SUM(hechoPublicacion_cantidadPublicaciones) promedioDiasPublicaciones
+FROM NJRE.BI_hecho_publicacion
+	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoPublicacion_tiempo_id
+	INNER JOIN NJRE.BI_subrubro on subrubro_id = hechoPublicacion_subrubro_id
+GROUP BY subrubro_descripcion, tiempo_cuatrimestre;
+GO
+
 -- Vista 2
 -- REVISAR: Mi cabeza ya no da mas
 IF OBJECT_ID('NJRE.BI_promedioStockInicial') IS NOT NULL 
