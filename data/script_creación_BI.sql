@@ -621,6 +621,34 @@ BEGIN
 END
 GO
 
+IF OBJECT_ID('NJRE.BI_migrar_hechoPago') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_hechoPago
+GO 
+CREATE PROCEDURE NJRE.BI_migrar_hechoPago AS
+BEGIN
+    INSERT INTO NJRE.BI_hecho_pago
+    (hechoPago_tipoMedioPago_id, hechoPago_tiempo_id, hechoPago_localidadCliente_id, hechoPago_cuota_id, hechoPago_importeTotalCuotas)
+    SELECT 
+        medioPago_tipoMedioPago_id,
+        tiempo_id,
+        domicilio_localidad,
+        cuota_id,
+        SUM(pago_importe)
+    FROM NJRE.pago
+        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, pago_fecha) AND tiempo_mes = DATEPART(month, pago_fecha)
+        INNER JOIN NJRE.medio_pago ON medioPago_id = pago_medioPago_id
+        INNER JOIN NJRE.envio ON envio_venta_id = pago_venta_id
+        INNER JOIN NJRE.domicilio ON domicilio_id = envio_domicilio_id
+        INNER JOIN NJRE.detalle_pago ON detallePago_pago_id = pago_id
+        INNER JOIN NJRE.BI_cuota ON cuota_cantidad = detallePago_cant_cuotas
+    GROUP BY 
+        medioPago_tipoMedioPago_id,
+        tiempo_id,
+        domicilio_localidad,
+        cuota_id;
+END
+GO
+
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
@@ -642,7 +670,7 @@ EXEC NJRE.BI_migrar_hechoVenta;
 EXEC NJRE.BI_migrar_hechoEnvio;
 EXEC NJRE.BI_migrar_hechoFactura;
 EXEC NJRE.BI_migrar_hechoPublicacion;
--- EXEC NJRE.BI_migrar_hechoPago;
+EXEC NJRE.BI_migrar_hechoPago;
 
 GO
 
@@ -689,16 +717,16 @@ FROM NJRE.BI_hecho_venta v
 	INNER JOIN NJRE.BI_localidad ON localidad_id = hechoVenta_localidadCliente_id
 	INNER JOIN NJRE.BI_rango_etario_cliente ON rangoEtarioCliente_id= hechoVenta_rangoEtarioCliente_id
 GROUP BY tiempo_anio, tiempo_cuatrimestre, localidad_id, localidad_nombre, rangoEtarioCliente_id, rangoEtarioCliente_nombre, rubro_id, rubro_nombre
-HAVING rubro_id in (
+HAVING rubro_id IN (
 	SELECT TOP 5 hechoVenta_rubro_id 
 	FROM NJRE.BI_hecho_venta 
 		INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoVenta_tiempo_id
 	WHERE tiempo_anio = t.tiempo_anio AND tiempo_cuatrimestre = t.tiempo_cuatrimestre
-		and hechoVenta_localidadCliente_id = localidad_id
-		and hechoVenta_rangoEtarioCliente_id = rangoEtarioCliente_id
+		AND hechoVenta_localidadCliente_id = localidad_id
+		AND hechoVenta_rangoEtarioCliente_id = rangoEtarioCliente_id
 	GROUP BY hechoVenta_rubro_id
 	ORDER BY SUM(hechoVenta_totalVentas) DESC
-	)
+)
 GO
 
 -- Vista 6
