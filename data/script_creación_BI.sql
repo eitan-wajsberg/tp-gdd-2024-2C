@@ -621,8 +621,8 @@ BEGIN
         SUM(facturaDetalle_subtotal)
     FROM NJRE.factura
         INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, factura_fecha) and tiempo_mes = DATEPART(month, factura_fecha)
-        INNER JOIN NJRE.usuario on usuario_id = factura_usuario
-        INNER JOIN NJRE.usuario_domicilio ON usuarioDomicilio_usuario_id = factura_usuario  
+        INNER JOIN NJRE.vendedor on vendedor_id = factura_usuario
+        INNER JOIN NJRE.usuario_domicilio ON usuarioDomicilio_usuario_id = vendedor_usuario_id  
 		INNER JOIN NJRE.domicilio ON domicilio_id = usuarioDomicilio_domicilio_id
         INNER JOIN NJRE.factura_detalle ON facturaDetalle_factura_id = factura_id
     GROUP BY
