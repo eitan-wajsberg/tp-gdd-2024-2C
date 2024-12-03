@@ -662,7 +662,7 @@ SELECT marca_nombre, tiempo_anio, SUM(hechoPublicacion_cantidadStockTotal) / SUM
 FROM NJRE.BI_hecho_publicacion
 	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoPublicacion_tiempo_id
 	INNER JOIN NJRE.BI_marca ON marca_id = hechoPublicacion_marca_id
-GROUP BY marca_nombre, tiempo_anio;
+GROUP BY marca_nombre, tiempo_anio
 GO
 
 -- Vista 3
@@ -708,7 +708,7 @@ IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL
     DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
 GO 
 CREATE VIEW NJRE.BI_porcentajeCumplimientoEnvios AS
-SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCumplidos) / SUM(hechoEnvio_cantidadEnvios) AS 'porcentaje de cumplimiento de envios' 
+SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCumplidos) * 100 / SUM(hechoEnvio_cantidadEnvios) AS 'porcentaje de cumplimiento de envios' 
 FROM NJRE.BI_hecho_envio he
 	INNER JOIN NJRE.BI_provincia p ON p.provincia_id = he.hechoEnvio_provinciaAlmacen_id
 	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id
