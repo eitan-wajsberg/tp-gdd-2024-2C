@@ -138,7 +138,6 @@ CREATE TABLE NJRE.BI_hecho_factura (
     hechoFactura_tiempo_id INT NOT NULL,
     hechoFactura_concepto_id INT NOT NULL,
     hechoFactura_provinciaVendedor_id NCHAR(2) NOT NULL,
-    hechoFactura_porcentajeFacturacion DECIMAL(18, 2) NOT NULL,
     hechoFactura_montoFacturado DECIMAL(18, 2) NOT NULL
 );
 
@@ -310,22 +309,6 @@ ADD CONSTRAINT FK_BI_HechoEnvio_Tiempo FOREIGN KEY (hechoEnvio_tiempo_id) REFERE
 -------------------------------------------------------------------------------------------------
 -- FUNCIONES AUXILIARES DE LA MIGRACION
 -------------------------------------------------------------------------------------------------
-
-IF OBJECT_ID('NJRE.BI_obtener_tiempo_id') IS NOT NULL 
-    DROP FUNCTION NJRE.BI_obtener_tiempo_id
-GO
-CREATE FUNCTION NJRE.BI_obtener_tiempo_id(@fecha_modelo DATE) 
-RETURNS INT 
-AS 
-    BEGIN 
-        DECLARE @id_fecha AS INT 
-        SELECT @id_fecha = tiempo_id
-        FROM NJRE.BI_tiempo	
-        WHERE tiempo_anio = YEAR(@fecha_modelo) AND tiempo_mes = MONTH(@fecha_modelo)
-
-        RETURN @id_fecha 
-    END
-GO
 
 IF OBJECT_ID('NJRE.BI_obtener_tiempo_cuatrimestre') IS NOT NULL 
     DROP FUNCTION NJRE.BI_obtener_tiempo_cuatrimestre;
@@ -602,24 +585,50 @@ BEGIN
     INSERT INTO NJRE.BI_hecho_envio 
     (hechoEnvio_tiempo_id, hechoEnvio_provinciaAlmacen_id, hechoEnvio_localidadCliente_id, hechoEnvio_tipoEnvio_id, hechoEnvio_cantidadEnvios, hechoEnvio_totalEnviosCumplidos, hechoEnvio_totalCostoEnvio)
     SELECT 
-        NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada),
+        tiempo_id,
         domAlmacen.domicilio_provincia, 
 		domCliente.domicilio_localidad,
         e.envio_tipoEnvio_id,
         COUNT(DISTINCT e.envio_id),
-        COUNT(CASE WHEN NJRE.BI_envioCumplido(e.envio_fecha_entrega, e.envio_fecha_programada, e.envio_hora_inicio, e.envio_hora_fin) = 1 THEN e.envio_id ELSE NULL END),
-        SUM(e.envio_costo) AS totalCostoEnvio
+        SUM(CASE WHEN NJRE.BI_envioCumplido(e.envio_fecha_entrega, e.envio_fecha_programada, e.envio_hora_inicio, e.envio_hora_fin) = 1 THEN 1 ELSE 0 END),
+        SUM(e.envio_costo)
     FROM NJRE.envio e
+        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, envio_fecha_programada) and tiempo_mes = DATEPART(month, envio_fecha_programada)
 		INNER JOIN NJRE.detalle_venta dv ON dv.detalleVenta_venta_id = e.envio_venta_id
 		INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
 		INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
 		INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
 		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
     GROUP BY 
-        NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada), 
+        tiempo_id,
         domAlmacen.domicilio_provincia, 
 		domCliente.domicilio_localidad,
         e.envio_tipoEnvio_id
+END
+GO
+
+IF OBJECT_ID('NJRE.BI_migrar_hechoFactura') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_hechoFactura
+GO 
+CREATE PROCEDURE NJRE.BI_migrar_hechoFactura AS
+BEGIN
+    INSERT INTO NJRE.BI_hecho_factura
+    (hechoFactura_tiempo_id, hechoFactura_concepto_id, hechoFactura_provinciaVendedor_id, hechoFactura_montoFacturado)
+    SELECT 
+        tiempo_id,
+        facturaDetalle_concepto_id,
+        domicilio_provincia,
+        SUM(factura_total)
+    FROM NJRE.factura
+        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, factura_fecha) and tiempo_mes = DATEPART(month, factura_fecha)
+        INNER JOIN NJRE.usuario on usuario_id = factura_usuario
+        INNER JOIN NJRE.usuario_domicilio ON usuarioDomicilio_usuario_id = factura_usuario  
+		INNER JOIN NJRE.domicilio ON domicilio_id = usuarioDomicilio_domicilio_id
+        INNER JOIN NJRE.factura_detalle ON facturaDetalle_factura_id = factura_id
+    GROUP BY
+        tiempo_id,
+        facturaDetalle_concepto_id,
+        domicilio_provincia;
 END
 GO
 
@@ -643,9 +652,10 @@ EXEC NJRE.BI_migrar_concepto;
 -- Hechos
 EXEC NJRE.BI_migrar_hechoVenta;
 EXEC NJRE.BI_migrar_hechoEnvio;
+EXEC NJRE.BI_migrar_hechoFactura;
 -- EXEC NJRE.BI_migrar_hechoPublicacion;
 -- EXEC NJRE.BI_migrar_hechoPago;
--- EXEC NJRE.BI_migrar_hechoFactura;
+
 GO
 
 
@@ -707,6 +717,7 @@ GROUP BY provincia_nombre, tiempo_anio, tiempo_mes;
 GO
 
 -- Vista 8
+-- REVISAR: Es correcto como esta calculado el total de costo de envio
 IF OBJECT_ID('NJRE.BI_localidadesConMayorCostoEnvio') IS NOT NULL 
     DROP VIEW NJRE.BI_localidadesConMayorCostoEnvio
 GO 
