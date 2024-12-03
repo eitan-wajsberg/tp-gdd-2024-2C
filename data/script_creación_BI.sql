@@ -696,13 +696,13 @@ IF OBJECT_ID('NJRE.BI_promedioTiempoPublicacion') IS NOT NULL
     DROP VIEW NJRE.BI_promedioTiempoPublicacion
 GO 
 CREATE VIEW NJRE.BI_promedioTiempoPublicacion AS
-SELECT subrubro_descripcion, tiempo_cuatrimestre, 
+SELECT tiempo_anio, tiempo_cuatrimestre, subrubro_descripcion, 
 SUM(hechoPublicacion_totalDiasPublicaciones) / 
 SUM(hechoPublicacion_cantidadPublicaciones) promedioDiasPublicaciones
 FROM NJRE.BI_hecho_publicacion
 	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoPublicacion_tiempo_id
 	INNER JOIN NJRE.BI_subrubro on subrubro_id = hechoPublicacion_subrubro_id
-GROUP BY subrubro_descripcion, tiempo_cuatrimestre;
+GROUP BY tiempo_anio, tiempo_cuatrimestre, hechoPublicacion_subrubro_id, subrubro_descripcion;
 GO
 
 -- Vista 2
