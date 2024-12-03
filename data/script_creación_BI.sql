@@ -721,8 +721,8 @@ GO
 CREATE VIEW NJRE.BI_promedioTiempoPublicacion AS
 SELECT tiempo_anio, tiempo_cuatrimestre, subrubro_descripcion, SUM(hechoPublicacion_totalDiasPublicaciones) / SUM(hechoPublicacion_cantidadPublicaciones) AS 'promedio de dias vigente de una publicacion'
 FROM NJRE.BI_hecho_publicacion
-	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoPublicacion_tiempo_id
-	INNER JOIN NJRE.BI_subrubro on subrubro_id = hechoPublicacion_subrubro_id
+	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoPublicacion_tiempo_id
+	INNER JOIN NJRE.BI_subrubro ON subrubro_id = hechoPublicacion_subrubro_id
 GROUP BY tiempo_anio, tiempo_cuatrimestre, hechoPublicacion_subrubro_id, subrubro_descripcion;
 GO
 
@@ -841,10 +841,10 @@ IF OBJECT_ID('NJRE.BI_localidadesConMayorCostoEnvio') IS NOT NULL
     DROP VIEW NJRE.BI_localidadesConMayorCostoEnvio
 GO 
 CREATE VIEW NJRE.BI_localidadesConMayorCostoEnvio AS
-SELECT localidad_nombre, sum(hechoEnvio_totalCostoEnvio) AS 'costo de envio'
+SELECT localidad_nombre, SUM(hechoEnvio_totalCostoEnvio) AS 'costo de envio'
 FROM NJRE.BI_hecho_envio he 
 	INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
-WHERE localidad_id in (select top 5 hechoEnvio_localidadCliente_id from NJRE.BI_hecho_envio group by hechoEnvio_localidadCliente_id order by sum(hechoEnvio_totalCostoEnvio) desc )
+WHERE localidad_id in (SELECT TOP 5 hechoEnvio_localidadCliente_id FROM NJRE.BI_hecho_envio GROUP BY hechoEnvio_localidadCliente_id ORDER BY SUM(hechoEnvio_totalCostoEnvio) DESC)
 GROUP BY localidad_id, localidad_nombre
 GO
 
