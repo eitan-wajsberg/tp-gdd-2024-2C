@@ -783,26 +783,7 @@ GO
 IF OBJECT_ID('NJRE.BI_localidadesmayorImporteEnCuotas') IS NOT NULL 
     DROP VIEW NJRE.BI_localidadesmayorImporteEnCuotas
 GO 
-SELECT localidad_nombre, tipoMedioPago_nombre,
-        tiempo_anio, tiempo_mes, SUM(hechoPago_importeTotalCuotas) importeTotalCuotasXLocalidad
-FROM NJRE.BI_hecho_Pago he 
-	INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoPago_localidadCliente_id
-    INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id= he.hechoPago_tiempo_id
-    INNER JOIN NJRE.BI_tipo_medio_pago tmp ON tmp.tipoMedioPago_id= he.hechoPago_tipoMedioPago_id
-GROUP BY localidad_nombre,tipoMedioPago_nombre, tiempo_anio, tiempo_mes,hechoPago_tiempo_id,hechoPago_tipoMedioPago_id, l.localidad_id
-HAVING localidad_id IN  (select top 3 hechoPago_localidadCliente_id 
-                        from NJRE.BI_hecho_Pago 
-						INNER JOIN NJRE.BI_cuota c ON c.cuota_id= hechoPago_cuota_id
-						where hechoPago_tiempo_id = he.hechoPago_tiempo_id
-						And hechoPago_tipoMedioPago_id = he.hechoPago_tipoMedioPago_id
-						And c.cuota_cantidad > 1
-                        group by hechoPago_localidadCliente_id 
-                        order by sum(hechoPago_importeTotalCuotas) desc)
-GO
-
-
-
-/*
+CREATE VIEW NJRE.BI_localidadesmayorImporteEnCuotas AS
 select tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) importeTotalCuotasXLocalidad
 from NJRE.BI_hecho_pago he
     INNER JOIN NJRE.BI_tiempo ON tiempo_id = he.hechoPago_tiempo_id
@@ -811,12 +792,14 @@ from NJRE.BI_hecho_pago he
 GROUP BY hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, hechoPago_medioPago_id, medioPago_nombre
 HAVING localidad_id IN (select top 3 hechoPago_localidadCliente_id 
                         from NJRE.BI_hecho_Pago 
-							INNER JOIN NJRE.BI_cuota c ON cuota_id= hechoPago_cuota_id
+							INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
                         where hechoPago_tiempo_id = he.hechoPago_tiempo_id
 							And hechoPago_medioPago_id = he.hechoPago_medioPago_id
 							And cuota_cantidad > 1
                         group by hechoPago_localidadCliente_id
-                        order by sum(hechoPago_importeTotalCuotas) desc)*/
+                        order by sum(hechoPago_importeTotalCuotas) desc)
+GO
+
 -- Vista 7 
 IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL 
     DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
