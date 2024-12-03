@@ -653,6 +653,17 @@ GO
 
 -- Vista 1
 -- Vista 2
+-- REVISAR: Mi cabeza ya no da mas
+IF OBJECT_ID('NJRE.BI_promedioStockInicial') IS NOT NULL 
+    DROP VIEW NJRE.BI_promedioStockInicial
+GO 
+CREATE VIEW NJRE.BI_promedioStockInicial AS
+SELECT marca_nombre, tiempo_anio, SUM(hechoPublicacion_cantidadStockTotal) / SUM(hechoPublicacion_cantidadPublicaciones) promedioStockInicial
+FROM NJRE.BI_hecho_publicacion
+	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoPublicacion_tiempo_id
+	INNER JOIN NJRE.BI_marca on marca_id = hechoPublicacion_marca_id
+GROUP BY marca_nombre, tiempo_anio;
+GO
 
 -- Vista 3
 IF OBJECT_ID('NJRE.BI_ventaPromedioMensual') IS NOT NULL 
