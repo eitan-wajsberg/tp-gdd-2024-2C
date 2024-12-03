@@ -711,11 +711,11 @@ IF OBJECT_ID('NJRE.BI_promedioStockInicial') IS NOT NULL
     DROP VIEW NJRE.BI_promedioStockInicial
 GO 
 CREATE VIEW NJRE.BI_promedioStockInicial AS
-SELECT marca_nombre, tiempo_anio, SUM(hechoPublicacion_cantidadStockTotal) / SUM(hechoPublicacion_cantidadPublicaciones) AS 'promedio stock inicial'
+SELECT tiempo_anio, hechoPublicacion_marca_id, marca_nombre, SUM(hechoPublicacion_cantidadStockTotal) / SUM(hechoPublicacion_cantidadPublicaciones) AS 'promedio stock inicial'
 FROM NJRE.BI_hecho_publicacion
 	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoPublicacion_tiempo_id
 	INNER JOIN NJRE.BI_marca ON marca_id = hechoPublicacion_marca_id
-GROUP BY marca_nombre, tiempo_anio
+GROUP BY tiempo_anio, hechoPublicacion_marca_id, marca_nombre
 GO
 
 -- Vista 3
