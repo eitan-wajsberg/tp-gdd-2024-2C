@@ -106,6 +106,7 @@ hecho_publicacion -- "marca"
 
 entity "hecho_pago" {
   * hechoPago_tipoMedioPago_id: INT **<<PK, FK>>**
+  * hechoPago_medioPago_id: INT **<<PK, FK>>**
   * hechoPago_tiempo_id: INT **<<PK, FK>>**
   * hechoPago_localidadCliente_id: INT **<<PK, FK>>**
   * hechoPago_cuota_id: INT **<<PK, FK>>**
