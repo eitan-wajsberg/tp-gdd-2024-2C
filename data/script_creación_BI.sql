@@ -706,7 +706,6 @@ GROUP BY tiempo_anio, tiempo_cuatrimestre, hechoPublicacion_subrubro_id, subrubr
 GO
 
 -- Vista 2
--- REVISAR: Mi cabeza ya no da mas
 IF OBJECT_ID('NJRE.BI_promedioStockInicial') IS NOT NULL 
     DROP VIEW NJRE.BI_promedioStockInicial
 GO 
@@ -765,7 +764,7 @@ SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCump
 FROM NJRE.BI_hecho_envio he
 	INNER JOIN NJRE.BI_provincia p ON p.provincia_id = he.hechoEnvio_provinciaAlmacen_id
 	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id
-GROUP BY provincia_nombre, tiempo_anio, tiempo_mes;
+GROUP BY provincia_id, provincia_nombre, tiempo_anio, tiempo_mes;
 GO
 
 -- Vista 8
@@ -777,7 +776,7 @@ SELECT localidad_nombre, sum(hechoEnvio_totalCostoEnvio) AS 'costo de envio'
 FROM NJRE.BI_hecho_envio he 
 	INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
 WHERE localidad_id in (select top 5 hechoEnvio_localidadCliente_id from NJRE.BI_hecho_envio group by hechoEnvio_localidadCliente_id order by sum(hechoEnvio_totalCostoEnvio) desc )
-GROUP BY localidad_nombre
+GROUP BY localidad_id, localidad_nombre
 GO
 
 -- Vista 9
