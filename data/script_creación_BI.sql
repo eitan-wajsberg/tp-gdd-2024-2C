@@ -793,9 +793,36 @@ HAVING localidad_id IN (
         AND hechoPago_medioPago_id = he.hechoPago_medioPago_id
         AND cuota_cantidad > 1
     GROUP BY hechoPago_localidadCliente_id
-    ORDER BY sum(hechoPago_importeTotalCuotas) DESC
+    ORDER BY SUM(hechoPago_importeTotalCuotas) DESC
 )
 GO
+
+/*
+IF OBJECT_ID('NJRE.BI_localidadesmayorImporteEnCuotas') IS NOT NULL 
+    DROP VIEW NJRE.BI_localidadesmayorImporteEnCuotas
+GO 
+CREATE VIEW NJRE.BI_localidadesmayorImporteEnCuotas AS
+WITH RankedLocalidades AS (
+    SELECT hechoPago_localidadCliente_id, hechoPago_tiempo_id, hechoPago_medioPago_id, 
+		SUM(hechoPago_importeTotalCuotas) total_importe,
+        ROW_NUMBER() OVER (PARTITION BY hechoPago_tiempo_id, hechoPago_medioPago_id ORDER BY SUM(hechoPago_importeTotalCuotas) DESC) ranking
+    FROM NJRE.BI_hecho_Pago
+    INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
+    WHERE cuota_cantidad > 1
+    GROUP BY hechoPago_localidadCliente_id, hechoPago_tiempo_id, hechoPago_medioPago_id
+)
+SELECT tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) AS 'importe total cuotas'
+FROM NJRE.BI_hecho_pago he
+	INNER JOIN NJRE.BI_tiempo ON tiempo_id = he.hechoPago_tiempo_id
+	INNER JOIN NJRE.BI_localidad ON localidad_id = he.hechoPago_localidadCliente_id
+	INNER JOIN NJRE.BI_medio_pago ON medioPago_id = he.hechoPago_medioPago_id
+	INNER JOIN RankedLocalidades rl ON he.hechoPago_localidadCliente_id = rl.hechoPago_localidadCliente_id 
+								   AND he.hechoPago_tiempo_id = rl.hechoPago_tiempo_id 
+								   AND he.hechoPago_medioPago_id = rl.hechoPago_medioPago_id
+WHERE rl.ranking <= 3
+GROUP BY he.hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, he.hechoPago_medioPago_id, medioPago_nombre;
+GO
+*/
 
 -- Vista 7 
 IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL 
