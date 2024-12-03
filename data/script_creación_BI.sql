@@ -716,13 +716,15 @@ GROUP BY provincia_nombre, tiempo_anio, tiempo_mes;
 GO
 
 -- Vista 8
--- REVISAR: Es correcto como esta calculado el total de costo de envio
 IF OBJECT_ID('NJRE.BI_localidadesConMayorCostoEnvio') IS NOT NULL 
     DROP VIEW NJRE.BI_localidadesConMayorCostoEnvio
 GO 
 CREATE VIEW NJRE.BI_localidadesConMayorCostoEnvio AS
-SELECT TOP 5 localidad_nombre, he.hechoEnvio_totalCostoEnvio AS 'costo de envio'
-FROM NJRE.BI_hecho_envio he INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
+SELECT localidad_nombre, sum(hechoEnvio_totalCostoEnvio) AS 'costo de envio'
+FROM NJRE.BI_hecho_envio he 
+	INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
+WHERE localidad_id in (select top 5 hechoEnvio_localidadCliente_id from NJRE.BI_hecho_envio group by hechoEnvio_localidadCliente_id order by sum(hechoEnvio_totalCostoEnvio) desc )
+GROUP BY localidad_nombre
 GO
 
 -- Vista 9
