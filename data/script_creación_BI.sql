@@ -618,7 +618,7 @@ BEGIN
         tiempo_id,
         facturaDetalle_concepto_id,
         domicilio_provincia,
-        SUM(factura_total)
+        SUM(facturaDetalle_subtotal)
     FROM NJRE.factura
         INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, factura_fecha) and tiempo_mes = DATEPART(month, factura_fecha)
         INNER JOIN NJRE.usuario on usuario_id = factura_usuario
@@ -631,7 +631,6 @@ BEGIN
         domicilio_provincia;
 END
 GO
-
 
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
@@ -724,14 +723,14 @@ GO
 CREATE VIEW NJRE.BI_localidadesConMayorCostoEnvio AS
 SELECT TOP 5 localidad_nombre, he.hechoEnvio_totalCostoEnvio
 FROM NJRE.BI_hecho_envio he INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
-ORDER BY he.hechoEnvio_totalCostoEnvio DESC;
+GO
 
 -- Vista 9
 IF OBJECT_ID('NJRE.BI_porcentajeFacturacionPorConcepto') IS NOT NULL 
     DROP VIEW NJRE.BI_porcentajeFacturacionPorConcepto
 GO 
 CREATE VIEW NJRE.BI_porcentajeFacturacionPorConcepto AS
-SELECT tiempo_anio, tiempo_mes, concepto_nombre, sum(hechoFactura_montoFacturado) *100 / (SELECT sum(hechoFactura_montoFacturado) FROM NJRE.BI_hecho_factura where hechoFactura_tiempo_id = tiempo_id) as 'monto facturado'
+SELECT tiempo_anio, tiempo_mes, concepto_nombre, sum(hechoFactura_montoFacturado) *100 / (SELECT sum(hechoFactura_montoFacturado) FROM NJRE.BI_hecho_factura where hechoFactura_tiempo_id = tiempo_id) as '% facturación'
 FROM NJRE.BI_hecho_factura 
 	INNER JOIN NJRE.BI_concepto ON concepto_id = hechoFactura_concepto_id
 	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoFactura_tiempo_id
