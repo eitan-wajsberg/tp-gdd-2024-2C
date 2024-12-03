@@ -504,48 +504,8 @@ BEGIN
 END 
 GO
 
+
 -- Hechos
-
-/* SELECT
---		NJRE.BI_obtener_tiempo_id(v.venta_fecha),
---		NJRE.BI_obtener_rangoHorario_id(v.venta_fecha),
---		NJRE.BI_Obtener_ubicacion_id(a.almacen_domicilio_id),
---		SUM(dv.detalleVenta_cantidad),
---		SUM(dv.detalleVenta_precio)
---	FROM NJRE.venta v
---	INNER JOIN NJRE.detalle_venta dv ON v.venta_id = dv.detalleVenta_venta_id
---    INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
---	INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
---    GROUP BY
---		NJRE.BI_obtener_tiempo_id(v.venta_fecha),
---		NJRE.BI_obtener_rangoHorario_id(v.venta_fecha),
---		NJRE.BI_obtener_ubicacion_id(a.almacen_domicilio_id) 
-*/
-
-/*
--- de Nehuen: "incompleto"
-IF OBJECT_ID('NJRE.BI_migrar_hechoPublicacion') IS NOT NULL 
-    DROP PROCEDURE NJRE.BI_migrar_hechoPublicacion
-GO 
-CREATE PROCEDURE NJRE.BI_migrar_hechoPublicacion AS
-BEGIN
-    INSERT INTO NJRE.BI_hechoPublicacion
-    (hechoPublicacion_tiempo_id, hechoPublicacion_subrubro_id, hechoPublicacion_marca_id,
-     hechoPublicacion_totalDiasPublicaciones, hechoPublicacion_cantidadStockTotal,
-     hechoPublicacion_cantidadPublicaciones)
-    SELECT 
-        t.tiempo_id,
-        sr.subrubro_id,
-        m.marca_id,
-        SUM(DATEDIFF(day, p.publicacion_fecha_inicio, p.publicacion_fecha_fin)),
-        SUM(p.publicacion_stock),
-        COUNT(p.publicacion_id)
-    FROM NJRE.publicacion p
-
-    GROUP BY t.tiempo_id, u.ubicacion_id, m.marca_id,;
-END
-GO
-*/
 
 IF OBJECT_ID('NJRE.BI_migrar_hechoVenta') IS NOT NULL 
     DROP PROCEDURE NJRE.BI_migrar_hechoVenta
@@ -573,7 +533,12 @@ BEGIN
 		INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, venta_fecha) and tiempo_mes = DATEPART(month, venta_fecha)
         INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
 		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
-	GROUP BY tiempo_id, domAlmacen.domicilio_provincia, domCliente.domicilio_localidad, s.subrubro_rubro_id, NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento);  
+	GROUP BY 
+        tiempo_id, 
+        domAlmacen.domicilio_provincia, 
+        domCliente.domicilio_localidad, 
+        s.subrubro_rubro_id, 
+        NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento);  
 END
 GO
 
@@ -632,6 +597,29 @@ BEGIN
 END
 GO
 
+IF OBJECT_ID('NJRE.BI_migrar_hechoPublicacion') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_hechoPublicacion
+GO 
+CREATE PROCEDURE NJRE.BI_migrar_hechoPublicacion AS
+BEGIN
+    INSERT INTO NJRE.BI_hecho_publicacion
+    (hechoPublicacion_tiempo_id, hechoPublicacion_subrubro_id, hechoPublicacion_marca_id, hechoPublicacion_totalDiasPublicaciones, hechoPublicacion_cantidadStockTotal, hechoPublicacion_cantidadPublicaciones)
+    SELECT 
+        tiempo_id,
+        producto_subrubro_id,
+        producto_marca_id,
+        SUM(DATEDIFF(day, p.publicacion_fecha_inicio, p.publicacion_fecha_fin)),
+        SUM(p.publicacion_stock),
+        COUNT(DISTINCT p.publicacion_id)
+    FROM NJRE.publicacion p
+        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, publicacion_fecha_inicio) and tiempo_mes = DATEPART(month, publicacion_fecha_inicio)
+        INNER JOIN NJRE.producto ON producto_id = publicacion_producto_id
+    GROUP BY 
+        tiempo_id,
+        producto_subrubro_id,
+        producto_marca_id;
+END
+GO
 
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
@@ -653,7 +641,7 @@ EXEC NJRE.BI_migrar_concepto;
 EXEC NJRE.BI_migrar_hechoVenta;
 EXEC NJRE.BI_migrar_hechoEnvio;
 EXEC NJRE.BI_migrar_hechoFactura;
--- EXEC NJRE.BI_migrar_hechoPublicacion;
+EXEC NJRE.BI_migrar_hechoPublicacion;
 -- EXEC NJRE.BI_migrar_hechoPago;
 
 GO
