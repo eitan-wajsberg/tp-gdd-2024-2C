@@ -504,6 +504,17 @@ BEGIN
 END 
 GO
 
+IF OBJECT_ID('NJRE.BI_migrar_cuota') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_cuota
+GO 
+CREATE PROCEDURE NJRE.BI_migrar_cuota AS
+BEGIN
+    INSERT INTO NJRE.BI_cuota (cuota_cantidad)
+    SELECT DISTINCT detallePago_cant_cuotas
+    FROM NJRE.detalle_pago 
+END
+GO 
+
 
 -- Hechos
 
@@ -633,7 +644,7 @@ BEGIN
         tiempo_id,
         domicilio_localidad,
         cuota_id,
-        SUM(pago_importe)
+        SUM(pago_importe) -- REVISAR: es pago importe o el pago parcial que esta en el detalle de pago?
     FROM NJRE.pago
         INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, pago_fecha) AND tiempo_mes = DATEPART(month, pago_fecha)
         INNER JOIN NJRE.medio_pago ON medioPago_id = pago_medioPago_id
@@ -664,6 +675,7 @@ EXEC NJRE.BI_migrar_marca;
 EXEC NJRE.BI_migrar_tipoEnvio;
 EXEC NJRE.BI_migrar_tipoMedioPago;
 EXEC NJRE.BI_migrar_concepto;
+EXEC NJRE.BI_migrar_cuota;
 
 -- Hechos
 EXEC NJRE.BI_migrar_hechoVenta;
