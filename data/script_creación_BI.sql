@@ -330,12 +330,11 @@ AS
 BEGIN
     DECLARE @cuatrimestre INT;
 
-    -- Lógica para determinar el cuatrimestre según el mes de la fecha
     SET @cuatrimestre = CASE 
         WHEN MONTH(@fecha) BETWEEN 1 AND 4 THEN 1 
         WHEN MONTH(@fecha) BETWEEN 5 AND 8 THEN 2  
         WHEN MONTH(@fecha) BETWEEN 9 AND 12 THEN 3 
-        ELSE NULL -- Si la fecha no es válida (aunque no debería ocurrir)
+        ELSE NULL
     END;
 
     RETURN @cuatrimestre;
@@ -404,7 +403,6 @@ IF OBJECT_ID('NJRE.BI_migrar_tiempo') IS NOT NULL
 GO 
 CREATE PROCEDURE NJRE.BI_migrar_tiempo AS
 BEGIN
-    -- OBSERVACION: quizas se puede sacar directamente de la tabla maestra, en lugar de hacer UNIONs
     INSERT INTO NJRE.BI_tiempo (tiempo_anio, tiempo_mes, tiempo_cuatrimestre) 
 	SELECT DISTINCT YEAR(p.publicacion_fecha_inicio), MONTH(p.publicacion_fecha_inicio), NJRE.BI_obtener_tiempo_cuatrimestre(publicacion_fecha_inicio)
 	FROM NJRE.publicacion p
@@ -619,7 +617,7 @@ BEGIN
         SUM(facturaDetalle_subtotal)
     FROM NJRE.factura
         INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, factura_fecha) and tiempo_mes = DATEPART(month, factura_fecha)
-        INNER JOIN NJRE.vendedor on vendedor_id = factura_usuario
+        INNER JOIN NJRE.vendedor ON vendedor_id = factura_usuario
         INNER JOIN NJRE.usuario_domicilio ON usuarioDomicilio_usuario_id = vendedor_usuario_id  
 		INNER JOIN NJRE.domicilio ON domicilio_id = usuarioDomicilio_domicilio_id
         INNER JOIN NJRE.factura_detalle ON facturaDetalle_factura_id = factura_id
@@ -721,12 +719,10 @@ IF OBJECT_ID('NJRE.BI_promedioTiempoPublicacion') IS NOT NULL
     DROP VIEW NJRE.BI_promedioTiempoPublicacion
 GO 
 CREATE VIEW NJRE.BI_promedioTiempoPublicacion AS
-SELECT tiempo_anio, tiempo_cuatrimestre, subrubro_descripcion, 
-SUM(hechoPublicacion_totalDiasPublicaciones) / 
-SUM(hechoPublicacion_cantidadPublicaciones) promedioDiasPublicaciones
+SELECT tiempo_anio, tiempo_cuatrimestre, subrubro_descripcion, SUM(hechoPublicacion_totalDiasPublicaciones) / SUM(hechoPublicacion_cantidadPublicaciones) AS 'promedio de dias vigente de una publicacion'
 FROM NJRE.BI_hecho_publicacion
-	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoPublicacion_tiempo_id
-	INNER JOIN NJRE.BI_subrubro on subrubro_id = hechoPublicacion_subrubro_id
+	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoPublicacion_tiempo_id
+	INNER JOIN NJRE.BI_subrubro ON subrubro_id = hechoPublicacion_subrubro_id
 GROUP BY tiempo_anio, tiempo_cuatrimestre, hechoPublicacion_subrubro_id, subrubro_descripcion;
 GO
 
@@ -780,27 +776,55 @@ GO
 
 
 -- Vista 6 REVISAR PERFORMANCE 3-9 minutos
-IF OBJECT_ID('NJRE.BI_localidadesmayorImporteEnCuotas') IS NOT NULL 
-    DROP VIEW NJRE.BI_localidadesmayorImporteEnCuotas
+IF OBJECT_ID('NJRE.BI_localidadesConMayorImporteEnCuotas') IS NOT NULL 
+    DROP VIEW NJRE.BI_localidadesConMayorImporteEnCuotas
 GO 
-CREATE VIEW NJRE.BI_localidadesmayorImporteEnCuotas AS
-select tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) importeTotalCuotasXLocalidad
-from NJRE.BI_hecho_pago he
+CREATE VIEW NJRE.BI_localidadesConMayorImporteEnCuotas AS
+SELECT tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) AS 'importe total cuotas'
+FROM NJRE.BI_hecho_pago he
     INNER JOIN NJRE.BI_tiempo ON tiempo_id = he.hechoPago_tiempo_id
     INNER JOIN NJRE.BI_medio_pago ON medioPago_id = he.hechoPago_medioPago_id
     INNER JOIN NJRE.BI_localidad ON localidad_id = he.hechoPago_localidadCliente_id
 	INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
 WHERE cuota_cantidad > 1
 GROUP BY hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, hechoPago_medioPago_id, medioPago_nombre
-HAVING localidad_id IN (select top 3 hechoPago_localidadCliente_id 
-                        from NJRE.BI_hecho_Pago 
-							INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
-                        where hechoPago_tiempo_id = he.hechoPago_tiempo_id
-							And hechoPago_medioPago_id = he.hechoPago_medioPago_id
-							And cuota_cantidad > 1
-                        group by hechoPago_localidadCliente_id
-                        order by sum(hechoPago_importeTotalCuotas) desc)
+HAVING localidad_id IN (
+    SELECT TOP 3 hechoPago_localidadCliente_id 
+    FROM NJRE.BI_hecho_Pago INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
+    WHERE hechoPago_tiempo_id = he.hechoPago_tiempo_id
+        AND hechoPago_medioPago_id = he.hechoPago_medioPago_id
+        AND cuota_cantidad > 1
+    GROUP BY hechoPago_localidadCliente_id
+    ORDER BY SUM(hechoPago_importeTotalCuotas) DESC
+)
 GO
+
+/*
+IF OBJECT_ID('NJRE.BI_localidadesConMayorImporteEnCuotas') IS NOT NULL 
+    DROP VIEW NJRE.BI_localidadesConMayorImporteEnCuotas
+GO 
+CREATE VIEW NJRE.BI_localidadesConMayorImporteEnCuotas AS
+WITH RankingLocalidades AS (
+    SELECT hechoPago_localidadCliente_id, hechoPago_tiempo_id, hechoPago_medioPago_id, 
+		SUM(hechoPago_importeTotalCuotas) total_importe,
+        ROW_NUMBER() OVER (PARTITION BY hechoPago_tiempo_id, hechoPago_medioPago_id ORDER BY SUM(hechoPago_importeTotalCuotas) DESC) ranking
+    FROM NJRE.BI_hecho_Pago
+    INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
+    WHERE cuota_cantidad > 1
+    GROUP BY hechoPago_localidadCliente_id, hechoPago_tiempo_id, hechoPago_medioPago_id
+)
+SELECT tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) AS 'importe total cuotas'
+FROM NJRE.BI_hecho_pago he
+	INNER JOIN NJRE.BI_tiempo ON tiempo_id = he.hechoPago_tiempo_id
+	INNER JOIN NJRE.BI_localidad ON localidad_id = he.hechoPago_localidadCliente_id
+	INNER JOIN NJRE.BI_medio_pago ON medioPago_id = he.hechoPago_medioPago_id
+	INNER JOIN RankingLocalidades rl ON he.hechoPago_localidadCliente_id = rl.hechoPago_localidadCliente_id 
+								   AND he.hechoPago_tiempo_id = rl.hechoPago_tiempo_id 
+								   AND he.hechoPago_medioPago_id = rl.hechoPago_medioPago_id
+WHERE rl.ranking <= 3
+GROUP BY he.hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, he.hechoPago_medioPago_id, medioPago_nombre;
+GO
+*/
 
 -- Vista 7 
 IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL 
@@ -819,10 +843,10 @@ IF OBJECT_ID('NJRE.BI_localidadesConMayorCostoEnvio') IS NOT NULL
     DROP VIEW NJRE.BI_localidadesConMayorCostoEnvio
 GO 
 CREATE VIEW NJRE.BI_localidadesConMayorCostoEnvio AS
-SELECT localidad_nombre, sum(hechoEnvio_totalCostoEnvio) AS 'costo de envio'
+SELECT localidad_nombre, SUM(hechoEnvio_totalCostoEnvio) AS 'costo de envio'
 FROM NJRE.BI_hecho_envio he 
 	INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
-WHERE localidad_id in (select top 5 hechoEnvio_localidadCliente_id from NJRE.BI_hecho_envio group by hechoEnvio_localidadCliente_id order by sum(hechoEnvio_totalCostoEnvio) desc )
+WHERE localidad_id in (SELECT TOP 5 hechoEnvio_localidadCliente_id FROM NJRE.BI_hecho_envio GROUP BY hechoEnvio_localidadCliente_id ORDER BY SUM(hechoEnvio_totalCostoEnvio) DESC)
 GROUP BY localidad_id, localidad_nombre
 GO
 
