@@ -644,7 +644,7 @@ BEGIN
         tiempo_id,
         domicilio_localidad,
         cuota_id,
-        SUM(pago_importe) -- REVISAR: es pago importe o el pago parcial que esta en el detalle de pago?
+        SUM(detallePago_importe_parcial)
     FROM NJRE.pago
         INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, pago_fecha) AND tiempo_mes = DATEPART(month, pago_fecha)
         INNER JOIN NJRE.medio_pago ON medioPago_id = pago_medioPago_id
