@@ -727,4 +727,24 @@ FROM NJRE.BI_hecho_envio he INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he
 ORDER BY he.hechoEnvio_totalCostoEnvio DESC;
 
 -- Vista 9
+IF OBJECT_ID('NJRE.BI_porcentajeFacturacionPorConcepto') IS NOT NULL 
+    DROP VIEW NJRE.BI_porcentajeFacturacionPorConcepto
+GO 
+CREATE VIEW NJRE.BI_porcentajeFacturacionPorConcepto AS
+SELECT tiempo_anio, tiempo_mes, concepto_nombre, sum(hechoFactura_montoFacturado) *100 / (SELECT sum(hechoFactura_montoFacturado) FROM NJRE.BI_hecho_factura where hechoFactura_tiempo_id = tiempo_id) as 'monto facturado'
+FROM NJRE.BI_hecho_factura 
+	INNER JOIN NJRE.BI_concepto ON concepto_id = hechoFactura_concepto_id
+	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoFactura_tiempo_id
+GROUP BY tiempo_id, tiempo_anio, tiempo_mes, hechoFactura_concepto_id, concepto_nombre;	
+GO
+
 -- Vista 10
+IF OBJECT_ID('NJRE.BI_facturacionPorProvincia') IS NOT NULL 
+    DROP VIEW NJRE.BI_facturacionPorProvincia
+GO 
+CREATE VIEW NJRE.BI_facturacionPorProvincia AS
+SELECT tiempo_anio, tiempo_cuatrimestre, provincia_nombre, sum(hechoFactura_montoFacturado) as 'monto facturado'
+FROM NJRE.BI_hecho_factura 
+	INNER JOIN NJRE.BI_provincia ON provincia_id = hechoFactura_provinciaVendedor_id
+	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoFactura_tiempo_id
+GROUP BY tiempo_anio, tiempo_cuatrimestre, hechoFactura_provinciaVendedor_id, provincia_nombre;	
