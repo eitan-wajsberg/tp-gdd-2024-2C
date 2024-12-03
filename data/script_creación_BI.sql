@@ -412,6 +412,12 @@ BEGIN
     UNION
 	SELECT DISTINCT YEAR( e.envio_fecha_programada), MONTH(e.envio_fecha_programada), NJRE.BI_obtener_tiempo_cuatrimestre(e.envio_fecha_programada)
 	FROM NJRE.envio e
+    UNION
+	SELECT DISTINCT YEAR( p.pago_fecha), MONTH(p.pago_fecha), NJRE.BI_obtener_tiempo_cuatrimestre(p.pago_fecha)
+	FROM NJRE.pago p
+	UNION
+	SELECT DISTINCT YEAR(f.factura_fecha), MONTH(f.factura_fecha), NJRE.BI_obtener_tiempo_cuatrimestre(f.factura_fecha)
+	FROM NJRE.factura f
 END
 GO 
 
