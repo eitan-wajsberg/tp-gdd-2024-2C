@@ -781,31 +781,7 @@ HAVING rubro_id IN (
 GO
 
 
--- Vista 6 REVISAR PERFORMANCE 3-9 minutos
-IF OBJECT_ID('NJRE.BI_localidadesConMayorImporteEnCuotas') IS NOT NULL 
-    DROP VIEW NJRE.BI_localidadesConMayorImporteEnCuotas
-GO 
-CREATE VIEW NJRE.BI_localidadesConMayorImporteEnCuotas AS
-SELECT tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) AS 'importe total cuotas'
-FROM NJRE.BI_hecho_pago he
-    INNER JOIN NJRE.BI_tiempo ON tiempo_id = he.hechoPago_tiempo_id
-    INNER JOIN NJRE.BI_medio_pago ON medioPago_id = he.hechoPago_medioPago_id
-    INNER JOIN NJRE.BI_localidad ON localidad_id = he.hechoPago_localidadCliente_id
-	INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
-WHERE cuota_cantidad > 1
-GROUP BY hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, hechoPago_medioPago_id, medioPago_nombre
-HAVING localidad_id IN (
-    SELECT TOP 3 hechoPago_localidadCliente_id 
-    FROM NJRE.BI_hecho_Pago INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
-    WHERE hechoPago_tiempo_id = he.hechoPago_tiempo_id
-        AND hechoPago_medioPago_id = he.hechoPago_medioPago_id
-        AND cuota_cantidad > 1
-    GROUP BY hechoPago_localidadCliente_id
-    ORDER BY SUM(hechoPago_importeTotalCuotas) DESC
-)
-GO
-
-/*
+-- Vista 6
 IF OBJECT_ID('NJRE.BI_localidadesConMayorImporteEnCuotas') IS NOT NULL 
     DROP VIEW NJRE.BI_localidadesConMayorImporteEnCuotas
 GO 
@@ -830,6 +806,31 @@ FROM NJRE.BI_hecho_pago he
 WHERE rl.ranking <= 3
 GROUP BY he.hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, he.hechoPago_medioPago_id, medioPago_nombre;
 GO
+
+/* Otra version de la vista 6, pero menos perfomante
+
+    IF OBJECT_ID('NJRE.BI_localidadesConMayorImporteEnCuotas') IS NOT NULL 
+        DROP VIEW NJRE.BI_localidadesConMayorImporteEnCuotas
+    GO 
+    CREATE VIEW NJRE.BI_localidadesConMayorImporteEnCuotas AS
+    SELECT tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) AS 'importe total cuotas'
+    FROM NJRE.BI_hecho_pago he
+        INNER JOIN NJRE.BI_tiempo ON tiempo_id = he.hechoPago_tiempo_id
+        INNER JOIN NJRE.BI_medio_pago ON medioPago_id = he.hechoPago_medioPago_id
+        INNER JOIN NJRE.BI_localidad ON localidad_id = he.hechoPago_localidadCliente_id
+        INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
+    WHERE cuota_cantidad > 1
+    GROUP BY hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, hechoPago_medioPago_id, medioPago_nombre
+    HAVING localidad_id IN (
+        SELECT TOP 3 hechoPago_localidadCliente_id 
+        FROM NJRE.BI_hecho_Pago INNER JOIN NJRE.BI_cuota ON cuota_id = hechoPago_cuota_id
+        WHERE hechoPago_tiempo_id = he.hechoPago_tiempo_id
+            AND hechoPago_medioPago_id = he.hechoPago_medioPago_id
+            AND cuota_cantidad > 1
+        GROUP BY hechoPago_localidadCliente_id
+        ORDER BY SUM(hechoPago_importeTotalCuotas) DESC
+    )
+    GO
 */
 
 -- Vista 7 
