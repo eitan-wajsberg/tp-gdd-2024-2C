@@ -561,7 +561,7 @@ BEGIN
 		s.subrubro_rubro_id,
 		NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento),
 		COUNT(DISTINCT venta_id),
-		SUM(dv.detalleVenta_cantidad)
+		SUM(dv.detalleVenta_subtotal)
 	FROM NJRE.venta v
         INNER JOIN NJRE.detalle_venta dv ON v.venta_id = dv.detalleVenta_venta_id
         INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
@@ -671,7 +671,7 @@ IF OBJECT_ID('NJRE.BI_ventaPromedioMensual') IS NOT NULL
     DROP VIEW NJRE.BI_ventaPromedioMensual
 GO 
 CREATE VIEW NJRE.BI_ventaPromedioMensual AS
-SELECT tiempo_anio, tiempo_mes, provincia_nombre, sum(hechoVenta_totalVentas) / sum(hechoVenta_cantidadVentas) 'promedio ventas'
+SELECT tiempo_anio, tiempo_mes, provincia_nombre, sum(hechoVenta_totalVentas) / sum(hechoVenta_cantidadVentas) 'promedio ventas en $'
 FROM NJRE.BI_hecho_venta
 	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoVenta_tiempo_id
 	INNER JOIN NJRE.provincia on provincia_id = hechoVenta_provinciaAlmacen_id
@@ -683,7 +683,7 @@ IF OBJECT_ID('NJRE.BI_rendimientoDeRubros') IS NOT NULL
     DROP VIEW NJRE.BI_rendimientoDeRubros
 GO 
 CREATE VIEW NJRE.BI_rendimientoDeRubros AS
-SELECT tiempo_anio, tiempo_cuatrimestre, localidad_nombre, rangoEtarioCliente_nombre, rubro_id, rubro_nombre
+SELECT tiempo_anio, tiempo_cuatrimestre, localidad_nombre, rangoEtarioCliente_nombre, rubro_id, rubro_nombre, sum(hechoVenta_totalVentas) 'ventas en $'
 FROM NJRE.BI_hecho_venta v
 	INNER JOIN NJRE.BI_tiempo t on tiempo_id = hechoVenta_tiempo_id
 	INNER JOIN NJRE.BI_rubro on rubro_id = hechoVenta_rubro_id
