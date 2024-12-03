@@ -125,6 +125,12 @@ entity "tipo_medio_pago" {
     * tipoMedioPago_nombre: NVARCHAR(50)
 }
 
+entity "medio_pago" {
+  * medioPago_id: INT **<<PK>>**
+  --
+    * medioPago_nombre: NVARCHAR(50)
+}
+
 entity "tiempo   " {
   * tiempo_id: INT **<<PK>>**
   --
@@ -139,6 +145,7 @@ entity "localidad " {
     * localidad_nombre: NVARCHAR(50) 
 }
 
+hecho_pago -- "medio_pago"
 hecho_pago -- "tipo_medio_pago"
 hecho_pago -- "tiempo   "
 hecho_pago -- "localidad "
