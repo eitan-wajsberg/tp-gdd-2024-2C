@@ -706,16 +706,15 @@ GROUP BY tiempo_anio, tiempo_cuatrimestre, hechoPublicacion_subrubro_id, subrubr
 GO
 
 -- Vista 2
--- REVISAR: Mi cabeza ya no da mas
 IF OBJECT_ID('NJRE.BI_promedioStockInicial') IS NOT NULL 
     DROP VIEW NJRE.BI_promedioStockInicial
 GO 
 CREATE VIEW NJRE.BI_promedioStockInicial AS
-SELECT marca_nombre, tiempo_anio, SUM(hechoPublicacion_cantidadStockTotal) / SUM(hechoPublicacion_cantidadPublicaciones) AS 'promedio stock inicial'
+SELECT tiempo_anio, hechoPublicacion_marca_id, marca_nombre, SUM(hechoPublicacion_cantidadStockTotal) / SUM(hechoPublicacion_cantidadPublicaciones) AS 'promedio stock inicial'
 FROM NJRE.BI_hecho_publicacion
 	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoPublicacion_tiempo_id
 	INNER JOIN NJRE.BI_marca ON marca_id = hechoPublicacion_marca_id
-GROUP BY marca_nombre, tiempo_anio
+GROUP BY tiempo_anio, hechoPublicacion_marca_id, marca_nombre
 GO
 
 -- Vista 3
@@ -786,7 +785,7 @@ SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCump
 FROM NJRE.BI_hecho_envio he
 	INNER JOIN NJRE.BI_provincia p ON p.provincia_id = he.hechoEnvio_provinciaAlmacen_id
 	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id
-GROUP BY provincia_nombre, tiempo_anio, tiempo_mes;
+GROUP BY provincia_id, provincia_nombre, tiempo_anio, tiempo_mes;
 GO
 
 -- Vista 8
@@ -798,7 +797,7 @@ SELECT localidad_nombre, sum(hechoEnvio_totalCostoEnvio) AS 'costo de envio'
 FROM NJRE.BI_hecho_envio he 
 	INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
 WHERE localidad_id in (select top 5 hechoEnvio_localidadCliente_id from NJRE.BI_hecho_envio group by hechoEnvio_localidadCliente_id order by sum(hechoEnvio_totalCostoEnvio) desc )
-GROUP BY localidad_nombre
+GROUP BY localidad_id, localidad_nombre
 GO
 
 -- Vista 9
