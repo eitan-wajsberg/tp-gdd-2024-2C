@@ -149,7 +149,6 @@ CREATE TABLE NJRE.BI_hecho_envio (
     hechoEnvio_tipoEnvio_id INT NOT NULL,
     hechoEnvio_cantidadEnvios DECIMAL(18, 0) NOT NULL,
     hechoEnvio_totalEnviosCumplidos DECIMAL(18, 0) NOT NULL,
-    hechoEnvio_totalEnviosNoCumplidos DECIMAL(18, 0) NOT NULL,
     hechoEnvio_totalCostoEnvio DECIMAL(18, 2) NOT NULL
 );
 
@@ -379,6 +378,26 @@ BEGIN
 END;
 GO
 
+IF OBJECT_ID('NJRE.BI_envioCumplido') IS NOT NULL 
+    DROP FUNCTION NJRE.BI_envioCumplido;
+GO
+CREATE FUNCTION NJRE.BI_envioCumplido(@fecha_entrega DATETIME, @fecha_programada DATE, @hora_inicio DECIMAL(18, 0), @hora_fin DECIMAL(18, 0)) 
+RETURNS BIT 
+AS 
+BEGIN
+    DECLARE @resultado BIT;
+
+    IF (
+        DATEPART(HOUR, @fecha_entrega) BETWEEN @hora_inicio AND @hora_fin
+        AND CONVERT(DATE, @fecha_entrega) = @fecha_programada
+    )
+        SET @resultado = 1;
+    ELSE 
+        SET @resultado = 0;
+
+    RETURN @resultado;
+END;
+GO
 
 -------------------------------------------------------------------------------------------------
 -- PROCEDURES PARA LA MIGRACION DE DATOS
@@ -581,15 +600,14 @@ GO
 CREATE PROCEDURE NJRE.BI_migrar_hechoEnvio AS
 BEGIN
     INSERT INTO NJRE.BI_hecho_envio 
-    (hechoEnvio_tiempo_id, hechoEnvio_provinciaAlmacen_id, hechoEnvio_localidadCliente_id, hechoEnvio_tipoEnvio_id, hechoEnvio_cantidadEnvios, hechoEnvio_totalEnviosCumplidos, hechoEnvio_totalEnviosNoCumplidos, hechoEnvio_totalCostoEnvio)
+    (hechoEnvio_tiempo_id, hechoEnvio_provinciaAlmacen_id, hechoEnvio_localidadCliente_id, hechoEnvio_tipoEnvio_id, hechoEnvio_cantidadEnvios, hechoEnvio_totalEnviosCumplidos, hechoEnvio_totalCostoEnvio)
     SELECT 
         NJRE.BI_obtener_tiempo_id(e.envio_fecha_programada),
         domAlmacen.domicilio_provincia, 
 		domCliente.domicilio_localidad,
         e.envio_tipoEnvio_id,
         COUNT(DISTINCT e.envio_id),
-        SUM(CASE WHEN e.envio_estado = 'Entregado' THEN e.envio_costo ELSE 0 END),
-        SUM(CASE WHEN e.envio_estado <> 'Entregado' THEN e.envio_costo ELSE 0 END),
+        COUNT(CASE WHEN NJRE.BI_envioCumplido(e.envio_fecha_entrega, e.envio_fecha_programada, e.envio_hora_inicio, e.envio_hora_fin) = 1 THEN e.envio_id ELSE NULL END),
         SUM(e.envio_costo) AS totalCostoEnvio
     FROM NJRE.envio e
 		INNER JOIN NJRE.detalle_venta dv ON dv.detalleVenta_venta_id = e.envio_venta_id
@@ -677,20 +695,15 @@ GO
 -- Vista 6
 
 -- Vista 7 
--- REVISAR: Todos tienen porcentaje de cumplimiento 0 ya que ningun envio fue entregado, todos estan programados desde 2025 en adelante
--- REVISAR: Cuando avisaron que no se puede usar distinct, era aca en las vistas o en la migracion de los hechos?
 IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL 
     DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
 GO 
 CREATE VIEW NJRE.BI_porcentajeCumplimientoEnvios AS
-SELECT DISTINCT provincia_nombre, tiempo_anio, tiempo_mes, 
-	CASE 
-		WHEN hechoEnvio_totalEnviosCumplidos = 0 THEN 0
-		ELSE hechoEnvio_cantidadEnvios * 1.0 / hechoEnvio_totalEnviosCumplidos 
-    END porcentajeCumplimiento
+SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCumplidos) / SUM(hechoEnvio_cantidadEnvios) porcentajeCumplimientoEnvios 
 FROM NJRE.BI_hecho_envio he
 	INNER JOIN NJRE.BI_provincia p ON p.provincia_id = he.hechoEnvio_provinciaAlmacen_id
-	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id;
+	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id
+GROUP BY provincia_nombre, tiempo_anio, tiempo_mes;
 GO
 
 -- Vista 8

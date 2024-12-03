@@ -195,7 +195,6 @@ entity "hecho_envio" {
   --
     * hechoEnvio_cantidadEnvios: DECIMAL(18, 0)
     * hechoEnvio_totalEnviosCumplidos: DECIMAL(18, 0)
-    * hechoEnvio_totalEnviosNoCumplidos: DECIMAL(18, 0)
     * hechoEnvio_totalCostoEnvio: DECIMAL(18, 2)
 }
 
