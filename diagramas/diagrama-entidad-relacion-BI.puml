@@ -154,7 +154,6 @@ entity "hecho_factura" {
   * hechoFactura_concepto_id: INT **<<PK, FK>>**
   * hechoFactura_provinciaVendedor_id: NCHAR(2) **<<PK, FK>>**
   --
-    * hechoFactura_porcentajeFacturacion: DECIMAL(18, 2)
     * hechoFactura_montoFacturado: DECIMAL(18, 2)
 }
 
