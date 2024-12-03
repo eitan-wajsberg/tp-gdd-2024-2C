@@ -780,6 +780,22 @@ GO
 
 -- Vista 6
 
+
+/*
+select tiempo_anio, tiempo_mes, medioPago_nombre, localidad_nombre, SUM(hechoPago_importeTotalCuotas) importeTotalCuotasXLocalidad
+from NJRE.BI_hecho_pago he
+    INNER JOIN NJRE.BI_tiempo ON tiempo_id = he.hechoPago_tiempo_id
+    INNER JOIN NJRE.BI_localidad ON localidad_id = he.hechoPago_localidadCliente_id
+    INNER JOIN NJRE.BI_medio_pago ON medioPago_id = he.hechoPago_medioPago_id
+GROUP BY hechoPago_tiempo_id, tiempo_anio, tiempo_mes, localidad_id, localidad_nombre, hechoPago_medioPago_id, medioPago_nombre
+HAVING localidad_id IN (select top 3 hechoPago_localidadCliente_id 
+                        from NJRE.BI_hecho_Pago 
+							INNER JOIN NJRE.BI_cuota c ON cuota_id= hechoPago_cuota_id
+                        where hechoPago_tiempo_id = he.hechoPago_tiempo_id
+							And hechoPago_medioPago_id = he.hechoPago_medioPago_id
+							And cuota_cantidad > 1
+                        group by hechoPago_localidadCliente_id
+                        order by sum(hechoPago_importeTotalCuotas) desc)*/
 -- Vista 7 
 IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL 
     DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
