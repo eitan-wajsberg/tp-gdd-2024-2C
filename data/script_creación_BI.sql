@@ -585,9 +585,9 @@ BEGIN
         domicilio_provincia,
         SUM(facturaDetalle_subtotal)
     FROM NJRE.factura
-        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, factura_fecha) AND tiempo_mes = DATEPART(month, factura_fecha)
-        INNER JOIN NJRE.usuario ON usuario_id = factura_usuario
-        INNER JOIN NJRE.usuario_domicilio ON usuarioDomicilio_usuario_id = factura_usuario  
+        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, factura_fecha) and tiempo_mes = DATEPART(month, factura_fecha)
+        INNER JOIN NJRE.vendedor on vendedor_id = factura_usuario
+        INNER JOIN NJRE.usuario_domicilio ON usuarioDomicilio_usuario_id = vendedor_usuario_id  
 		INNER JOIN NJRE.domicilio ON domicilio_id = usuarioDomicilio_domicilio_id
         INNER JOIN NJRE.factura_detalle ON facturaDetalle_factura_id = factura_id
     GROUP BY
@@ -680,6 +680,19 @@ GO
 -------------------------------------------------------------------------------------------------
 
 -- Vista 1
+IF OBJECT_ID('NJRE.BI_promedioTiempoPublicacion') IS NOT NULL 
+    DROP VIEW NJRE.BI_promedioTiempoPublicacion
+GO 
+CREATE VIEW NJRE.BI_promedioTiempoPublicacion AS
+SELECT subrubro_descripcion, tiempo_cuatrimestre, 
+SUM(hechoPublicacion_totalDiasPublicaciones) / 
+SUM(hechoPublicacion_cantidadPublicaciones) promedioDiasPublicaciones
+FROM NJRE.BI_hecho_publicacion
+	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoPublicacion_tiempo_id
+	INNER JOIN NJRE.BI_subrubro on subrubro_id = hechoPublicacion_subrubro_id
+GROUP BY subrubro_descripcion, tiempo_cuatrimestre;
+GO
+
 -- Vista 2
 -- REVISAR: Mi cabeza ya no da mas
 IF OBJECT_ID('NJRE.BI_promedioStockInicial') IS NOT NULL 
@@ -690,7 +703,7 @@ SELECT marca_nombre, tiempo_anio, SUM(hechoPublicacion_cantidadStockTotal) / SUM
 FROM NJRE.BI_hecho_publicacion
 	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoPublicacion_tiempo_id
 	INNER JOIN NJRE.BI_marca ON marca_id = hechoPublicacion_marca_id
-GROUP BY marca_nombre, tiempo_anio;
+GROUP BY marca_nombre, tiempo_anio
 GO
 
 -- Vista 3
@@ -736,7 +749,7 @@ IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL
     DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
 GO 
 CREATE VIEW NJRE.BI_porcentajeCumplimientoEnvios AS
-SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCumplidos) / SUM(hechoEnvio_cantidadEnvios) AS 'porcentaje de cumplimiento de envios' 
+SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCumplidos) * 100 / SUM(hechoEnvio_cantidadEnvios) AS 'porcentaje de cumplimiento de envios' 
 FROM NJRE.BI_hecho_envio he
 	INNER JOIN NJRE.BI_provincia p ON p.provincia_id = he.hechoEnvio_provinciaAlmacen_id
 	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id
@@ -744,13 +757,15 @@ GROUP BY provincia_nombre, tiempo_anio, tiempo_mes;
 GO
 
 -- Vista 8
--- REVISAR: Es correcto como esta calculado el total de costo de envio
 IF OBJECT_ID('NJRE.BI_localidadesConMayorCostoEnvio') IS NOT NULL 
     DROP VIEW NJRE.BI_localidadesConMayorCostoEnvio
 GO 
 CREATE VIEW NJRE.BI_localidadesConMayorCostoEnvio AS
-SELECT TOP 5 localidad_nombre, he.hechoEnvio_totalCostoEnvio AS 'costo de envio'
-FROM NJRE.BI_hecho_envio he INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
+SELECT localidad_nombre, sum(hechoEnvio_totalCostoEnvio) AS 'costo de envio'
+FROM NJRE.BI_hecho_envio he 
+	INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
+WHERE localidad_id in (select top 5 hechoEnvio_localidadCliente_id from NJRE.BI_hecho_envio group by hechoEnvio_localidadCliente_id order by sum(hechoEnvio_totalCostoEnvio) desc )
+GROUP BY localidad_nombre
 GO
 
 -- Vista 9
