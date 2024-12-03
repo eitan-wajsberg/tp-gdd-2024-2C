@@ -195,8 +195,8 @@ CREATE TABLE NJRE.BI_tiempo (
     tiempo_anio INT NOT NULL,
     tiempo_cuatrimestre INT NOT NULL,
     tiempo_mes INT NOT NULL,
-	CONSTRAINT CHK_TiempoCuatrimestre CHECK (tiempo_cuatrimestre between 1 and 4),
-	CONSTRAINT CHK_TiempoMes CHECK (tiempo_mes between 1 and 12)
+	CONSTRAINT CHK_TiempoCuatrimestre CHECK (tiempo_cuatrimestre between 1 AND 4),
+	CONSTRAINT CHK_TiempoMes CHECK (tiempo_mes between 1 AND 12)
 );
 
 CREATE TABLE NJRE.BI_localidad (
@@ -504,48 +504,8 @@ BEGIN
 END 
 GO
 
+
 -- Hechos
-
-/* SELECT
---		NJRE.BI_obtener_tiempo_id(v.venta_fecha),
---		NJRE.BI_obtener_rangoHorario_id(v.venta_fecha),
---		NJRE.BI_Obtener_ubicacion_id(a.almacen_domicilio_id),
---		SUM(dv.detalleVenta_cantidad),
---		SUM(dv.detalleVenta_precio)
---	FROM NJRE.venta v
---	INNER JOIN NJRE.detalle_venta dv ON v.venta_id = dv.detalleVenta_venta_id
---    INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
---	INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
---    GROUP BY
---		NJRE.BI_obtener_tiempo_id(v.venta_fecha),
---		NJRE.BI_obtener_rangoHorario_id(v.venta_fecha),
---		NJRE.BI_obtener_ubicacion_id(a.almacen_domicilio_id) 
-*/
-
-/*
--- de Nehuen: "incompleto"
-IF OBJECT_ID('NJRE.BI_migrar_hechoPublicacion') IS NOT NULL 
-    DROP PROCEDURE NJRE.BI_migrar_hechoPublicacion
-GO 
-CREATE PROCEDURE NJRE.BI_migrar_hechoPublicacion AS
-BEGIN
-    INSERT INTO NJRE.BI_hechoPublicacion
-    (hechoPublicacion_tiempo_id, hechoPublicacion_subrubro_id, hechoPublicacion_marca_id,
-     hechoPublicacion_totalDiasPublicaciones, hechoPublicacion_cantidadStockTotal,
-     hechoPublicacion_cantidadPublicaciones)
-    SELECT 
-        t.tiempo_id,
-        sr.subrubro_id,
-        m.marca_id,
-        SUM(DATEDIFF(day, p.publicacion_fecha_inicio, p.publicacion_fecha_fin)),
-        SUM(p.publicacion_stock),
-        COUNT(p.publicacion_id)
-    FROM NJRE.publicacion p
-
-    GROUP BY t.tiempo_id, u.ubicacion_id, m.marca_id,;
-END
-GO
-*/
 
 IF OBJECT_ID('NJRE.BI_migrar_hechoVenta') IS NOT NULL 
     DROP PROCEDURE NJRE.BI_migrar_hechoVenta
@@ -570,10 +530,15 @@ BEGIN
 		INNER JOIN NJRE.producto pr ON pr.producto_id = p.publicacion_producto_id
 		INNER JOIN NJRE.subrubro s ON s.subrubro_id = pr.producto_subrubro_id
 		INNER JOIN NJRE.cliente c ON c.cliente_id = v.venta_cliente_id
-		INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, venta_fecha) and tiempo_mes = DATEPART(month, venta_fecha)
+		INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, venta_fecha) AND tiempo_mes = DATEPART(month, venta_fecha)
         INNER JOIN NJRE.domicilio domAlmacen ON domAlmacen.domicilio_id = a.almacen_domicilio_id
 		INNER JOIN NJRE.domicilio domCliente ON domCliente.domicilio_id = e.envio_domicilio_id
-	GROUP BY tiempo_id, domAlmacen.domicilio_provincia, domCliente.domicilio_localidad, s.subrubro_rubro_id, NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento);  
+	GROUP BY 
+        tiempo_id, 
+        domAlmacen.domicilio_provincia, 
+        domCliente.domicilio_localidad, 
+        s.subrubro_rubro_id, 
+        NJRE.BI_obtener_rangoEtario_id(c.cliente_fecha_nacimiento);  
 END
 GO
 
@@ -593,7 +558,7 @@ BEGIN
         SUM(CASE WHEN NJRE.BI_envioCumplido(e.envio_fecha_entrega, e.envio_fecha_programada, e.envio_hora_inicio, e.envio_hora_fin) = 1 THEN 1 ELSE 0 END),
         SUM(e.envio_costo)
     FROM NJRE.envio e
-        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, envio_fecha_programada) and tiempo_mes = DATEPART(month, envio_fecha_programada)
+        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, envio_fecha_programada) AND tiempo_mes = DATEPART(month, envio_fecha_programada)
 		INNER JOIN NJRE.detalle_venta dv ON dv.detalleVenta_venta_id = e.envio_venta_id
 		INNER JOIN NJRE.publicacion p ON p.publicacion_id = dv.detalleVenta_publicacion_id
 		INNER JOIN NJRE.almacen a ON a.almacen_id = p.publicacion_almacen_id
@@ -632,6 +597,30 @@ BEGIN
 END
 GO
 
+IF OBJECT_ID('NJRE.BI_migrar_hechoPublicacion') IS NOT NULL 
+    DROP PROCEDURE NJRE.BI_migrar_hechoPublicacion
+GO 
+CREATE PROCEDURE NJRE.BI_migrar_hechoPublicacion AS
+BEGIN
+    INSERT INTO NJRE.BI_hecho_publicacion
+    (hechoPublicacion_tiempo_id, hechoPublicacion_subrubro_id, hechoPublicacion_marca_id, hechoPublicacion_totalDiasPublicaciones, hechoPublicacion_cantidadStockTotal, hechoPublicacion_cantidadPublicaciones)
+    SELECT 
+        tiempo_id,
+        producto_subrubro_id,
+        producto_marca_id,
+        SUM(DATEDIFF(day, p.publicacion_fecha_inicio, p.publicacion_fecha_fin)),
+        SUM(p.publicacion_stock),
+        COUNT(DISTINCT p.publicacion_id)
+    FROM NJRE.publicacion p
+        INNER JOIN NJRE.BI_tiempo ON tiempo_anio = DATEPART(year, publicacion_fecha_inicio) AND tiempo_mes = DATEPART(month, publicacion_fecha_inicio)
+        INNER JOIN NJRE.producto ON producto_id = publicacion_producto_id
+    GROUP BY 
+        tiempo_id,
+        producto_subrubro_id,
+        producto_marca_id;
+END
+GO
+
 -------------------------------------------------------------------------------------------------
 -- EJECUCION DE LA MIGRACION DE DATOS
 -------------------------------------------------------------------------------------------------
@@ -652,7 +641,7 @@ EXEC NJRE.BI_migrar_concepto;
 EXEC NJRE.BI_migrar_hechoVenta;
 EXEC NJRE.BI_migrar_hechoEnvio;
 EXEC NJRE.BI_migrar_hechoFactura;
--- EXEC NJRE.BI_migrar_hechoPublicacion;
+EXEC NJRE.BI_migrar_hechoPublicacion;
 -- EXEC NJRE.BI_migrar_hechoPago;
 
 GO
@@ -664,16 +653,27 @@ GO
 
 -- Vista 1
 -- Vista 2
+-- REVISAR: Mi cabeza ya no da mas
+IF OBJECT_ID('NJRE.BI_promedioStockInicial') IS NOT NULL 
+    DROP VIEW NJRE.BI_promedioStockInicial
+GO 
+CREATE VIEW NJRE.BI_promedioStockInicial AS
+SELECT marca_nombre, tiempo_anio, SUM(hechoPublicacion_cantidadStockTotal) / SUM(hechoPublicacion_cantidadPublicaciones) AS 'promedio stock inicial'
+FROM NJRE.BI_hecho_publicacion
+	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoPublicacion_tiempo_id
+	INNER JOIN NJRE.BI_marca ON marca_id = hechoPublicacion_marca_id
+GROUP BY marca_nombre, tiempo_anio;
+GO
 
 -- Vista 3
 IF OBJECT_ID('NJRE.BI_ventaPromedioMensual') IS NOT NULL 
     DROP VIEW NJRE.BI_ventaPromedioMensual
 GO 
 CREATE VIEW NJRE.BI_ventaPromedioMensual AS
-SELECT tiempo_anio, tiempo_mes, provincia_nombre, sum(hechoVenta_totalVentas) / sum(hechoVenta_cantidadVentas) 'promedio ventas en $'
+SELECT tiempo_anio, tiempo_mes, provincia_nombre, SUM(hechoVenta_totalVentas) / SUM(hechoVenta_cantidadVentas) 'promedio ventas en $'
 FROM NJRE.BI_hecho_venta
-	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoVenta_tiempo_id
-	INNER JOIN NJRE.provincia on provincia_id = hechoVenta_provinciaAlmacen_id
+	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoVenta_tiempo_id
+	INNER JOIN NJRE.provincia ON provincia_id = hechoVenta_provinciaAlmacen_id
 GROUP BY hechoVenta_tiempo_id, tiempo_anio, tiempo_mes, provincia_id, provincia_nombre
 GO
 
@@ -682,22 +682,22 @@ IF OBJECT_ID('NJRE.BI_rendimientoDeRubros') IS NOT NULL
     DROP VIEW NJRE.BI_rendimientoDeRubros
 GO 
 CREATE VIEW NJRE.BI_rendimientoDeRubros AS
-SELECT tiempo_anio, tiempo_cuatrimestre, localidad_nombre, rangoEtarioCliente_nombre, rubro_id, rubro_nombre, sum(hechoVenta_totalVentas) 'ventas en $'
+SELECT tiempo_anio, tiempo_cuatrimestre, localidad_nombre, rangoEtarioCliente_nombre, rubro_id, rubro_nombre, SUM(hechoVenta_totalVentas) 'ventas en $'
 FROM NJRE.BI_hecho_venta v
-	INNER JOIN NJRE.BI_tiempo t on tiempo_id = hechoVenta_tiempo_id
-	INNER JOIN NJRE.BI_rubro on rubro_id = hechoVenta_rubro_id
-	INNER JOIN NJRE.BI_localidad on localidad_id = hechoVenta_localidadCliente_id
-	INNER JOIN NJRE.BI_rango_etario_cliente on rangoEtarioCliente_id= hechoVenta_rangoEtarioCliente_id
+	INNER JOIN NJRE.BI_tiempo t ON tiempo_id = hechoVenta_tiempo_id
+	INNER JOIN NJRE.BI_rubro ON rubro_id = hechoVenta_rubro_id
+	INNER JOIN NJRE.BI_localidad ON localidad_id = hechoVenta_localidadCliente_id
+	INNER JOIN NJRE.BI_rango_etario_cliente ON rangoEtarioCliente_id= hechoVenta_rangoEtarioCliente_id
 GROUP BY tiempo_anio, tiempo_cuatrimestre, localidad_id, localidad_nombre, rangoEtarioCliente_id, rangoEtarioCliente_nombre, rubro_id, rubro_nombre
 HAVING rubro_id in (
 	SELECT TOP 5 hechoVenta_rubro_id 
 	FROM NJRE.BI_hecho_venta 
-		INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoVenta_tiempo_id
-	WHERE tiempo_anio = t.tiempo_anio and tiempo_cuatrimestre = t.tiempo_cuatrimestre
+		INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoVenta_tiempo_id
+	WHERE tiempo_anio = t.tiempo_anio AND tiempo_cuatrimestre = t.tiempo_cuatrimestre
 		and hechoVenta_localidadCliente_id = localidad_id
 		and hechoVenta_rangoEtarioCliente_id = rangoEtarioCliente_id
 	GROUP BY hechoVenta_rubro_id
-	ORDER BY sum(hechoVenta_totalVentas) desc
+	ORDER BY SUM(hechoVenta_totalVentas) DESC
 	)
 GO
 
@@ -708,7 +708,7 @@ IF OBJECT_ID('NJRE.BI_porcentajeCumplimientoEnvios') IS NOT NULL
     DROP VIEW NJRE.BI_porcentajeCumplimientoEnvios
 GO 
 CREATE VIEW NJRE.BI_porcentajeCumplimientoEnvios AS
-SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCumplidos) / SUM(hechoEnvio_cantidadEnvios) porcentajeCumplimientoEnvios 
+SELECT provincia_nombre, tiempo_anio, tiempo_mes, SUM(hechoEnvio_totalEnviosCumplidos) / SUM(hechoEnvio_cantidadEnvios) AS 'porcentaje de cumplimiento de envios' 
 FROM NJRE.BI_hecho_envio he
 	INNER JOIN NJRE.BI_provincia p ON p.provincia_id = he.hechoEnvio_provinciaAlmacen_id
 	INNER JOIN NJRE.BI_tiempo t ON t.tiempo_id = he.hechoEnvio_tiempo_id
@@ -721,7 +721,7 @@ IF OBJECT_ID('NJRE.BI_localidadesConMayorCostoEnvio') IS NOT NULL
     DROP VIEW NJRE.BI_localidadesConMayorCostoEnvio
 GO 
 CREATE VIEW NJRE.BI_localidadesConMayorCostoEnvio AS
-SELECT TOP 5 localidad_nombre, he.hechoEnvio_totalCostoEnvio
+SELECT TOP 5 localidad_nombre, he.hechoEnvio_totalCostoEnvio AS 'costo de envio'
 FROM NJRE.BI_hecho_envio he INNER JOIN NJRE.BI_localidad l ON l.localidad_id= he.hechoEnvio_localidadCliente_id
 GO
 
@@ -730,10 +730,10 @@ IF OBJECT_ID('NJRE.BI_porcentajeFacturacionPorConcepto') IS NOT NULL
     DROP VIEW NJRE.BI_porcentajeFacturacionPorConcepto
 GO 
 CREATE VIEW NJRE.BI_porcentajeFacturacionPorConcepto AS
-SELECT tiempo_anio, tiempo_mes, concepto_nombre, sum(hechoFactura_montoFacturado) *100 / (SELECT sum(hechoFactura_montoFacturado) FROM NJRE.BI_hecho_factura where hechoFactura_tiempo_id = tiempo_id) as '% facturación'
+SELECT tiempo_anio, tiempo_mes, concepto_nombre, SUM(hechoFactura_montoFacturado) * 100 / (SELECT SUM(hechoFactura_montoFacturado) FROM NJRE.BI_hecho_factura where hechoFactura_tiempo_id = tiempo_id) AS 'porcentaje facturación'
 FROM NJRE.BI_hecho_factura 
 	INNER JOIN NJRE.BI_concepto ON concepto_id = hechoFactura_concepto_id
-	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoFactura_tiempo_id
+	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoFactura_tiempo_id
 GROUP BY tiempo_id, tiempo_anio, tiempo_mes, hechoFactura_concepto_id, concepto_nombre;	
 GO
 
@@ -742,8 +742,8 @@ IF OBJECT_ID('NJRE.BI_facturacionPorProvincia') IS NOT NULL
     DROP VIEW NJRE.BI_facturacionPorProvincia
 GO 
 CREATE VIEW NJRE.BI_facturacionPorProvincia AS
-SELECT tiempo_anio, tiempo_cuatrimestre, provincia_nombre, sum(hechoFactura_montoFacturado) as 'monto facturado'
+SELECT tiempo_anio, tiempo_cuatrimestre, provincia_nombre, SUM(hechoFactura_montoFacturado) AS 'monto facturado'
 FROM NJRE.BI_hecho_factura 
 	INNER JOIN NJRE.BI_provincia ON provincia_id = hechoFactura_provinciaVendedor_id
-	INNER JOIN NJRE.BI_tiempo on tiempo_id = hechoFactura_tiempo_id
-GROUP BY tiempo_anio, tiempo_cuatrimestre, hechoFactura_provinciaVendedor_id, provincia_nombre;	
+	INNER JOIN NJRE.BI_tiempo ON tiempo_id = hechoFactura_tiempo_id
+GROUP BY tiempo_anio, tiempo_cuatrimestre, hechoFactura_provinciaVendedor_id, provincia_nombre;
