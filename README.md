@@ -23,17 +23,17 @@ El trabajo práctico tuvo como propósito simular la implementación de un siste
 
 ## Entregas
 
-Se crearon tres ramas en el repositorio, una para cada entrega. El desarrollo del trabajo práctico se organizó en las siguientes etapas:  
+Se crearon tres ramas en el repositorio, una para cada entrega. El desarrollo del trabajo práctico se organizó en las siguientes entregas:  
 
-1. **[Entrega del DER](<entrega-1/>)**  
+1. **[Entrega del DER](https://github.com/eitan-wajsberg/tp-gdd-2024-2C/tree/entrega-1)**  
    - Diagrama Entidad-Relación (DER) del modelo transaccional.  
    - Documento de estrategia que detalla las decisiones iniciales tomadas durante el diseño.  
 
-2. **[Entrega del Modelo de Datos Relacional y Migración](<entrega-2/>)**  
+2. **[Entrega del Modelo de Datos Relacional y Migración](https://github.com/eitan-wajsberg/tp-gdd-2024-2C/tree/entrega-2)**  
    - Script para la creación y migración de datos del modelo relacional.  
    - Actualización del documento de estrategia para incluir las decisiones tomadas durante esta entrega.  
 
-3. **[Entrega del Modelo de BI y Carga de Datos](<entrega-3/>)**  
+3. **[Entrega del Modelo de BI y Carga de Datos](https://github.com/eitan-wajsberg/tp-gdd-2024-2C/tree/entrega-3)**
    - DER del modelo BI.  
    - Script para la creación y carga de datos del modelo BI.  
    - Versión final del documento de estrategia con las decisiones tomadas en esta etapa.  
